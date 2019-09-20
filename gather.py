@@ -13,7 +13,7 @@ import csv
 import pprint
 import shutil
 import pathlib
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # EXTERNAL LIB
 import tweepy
@@ -24,15 +24,24 @@ from extern import log
 # CONSTANTS
 DATA_DIR = pathlib.Path('data/')
 
-def trending_tweets(api, num_topics=1, max_tweets=1000, max_chars=10000):
+def trending_tweets(api, woeid, num_topics, max_tweets=10000, max_chars=1000000):
     
-    # Grabs all trending topics.
-    topics = api.trends_place(1)
+    # Grabs all trending topics with a known tweet volume.
+    topics = [topic for topic in api.trends_place(woeid)[0]['trends'] if topic['tweet_volume'] != None]
+    
+    # Sort trending topics by their tweet volume. Topics with more tweets are more likely to be
+    # interesting, and more data is always helpful.
+    top_topics = sorted(topics, key=lambda topic: topic['tweet_volume'], reverse=True)
+    
+    # Create the data folder if it doesn't exist.
+    if not os.path.isdir(DATA_DIR):
+        os.mkdir(DATA_DIR)
     
     # Process the first N topics.
-    for trend in topics[0]['trends'][:num_topics]:
+    for trend in top_topics[:num_topics]:
         
         hashtag = trend['name']
+        log(f'Gathering tweets for {hashtag}...')
         
         # Only consider trends with at least one English letter, for now.
         # This introduces bias but makes results more interpretable.
@@ -45,7 +54,7 @@ def trending_tweets(api, num_topics=1, max_tweets=1000, max_chars=10000):
                         
             # Make a file to store the tweets in.
             fname = str(DATA_DIR / (hashtag + '.csv'))
-            with open(fname, 'w', newline='', encoding='utf-8') as topicfile:
+            with open(fname, 'w+', newline='', encoding='utf-8') as topicfile:
             
                 # Use a cursor to find tweets and a csv writer to record them.
                 wtr = csv.writer(topicfile)
@@ -54,11 +63,12 @@ def trending_tweets(api, num_topics=1, max_tweets=1000, max_chars=10000):
                     q=hashtag, 
                     count=max_tweets, 
                     lang='en', 
-                    since=datetime.today().strftime('%Y-%m-%d'),
-                    tweet_mode='extended'
+                    since=datetime.strftime(datetime.now() - timedelta(1), '%Y-%m-%d'),
+                    tweet_mode='extended',
+                    rpp=100
                 )
                 
-                for tweet in cursor.items():
+                for tweet in cursor.items(max_tweets):
                     tweet = tweet._json
 
                     # Retweets would lead to data duplication, so those are skipped.
