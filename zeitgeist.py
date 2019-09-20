@@ -10,22 +10,16 @@
 # STD LIB
 import os
 import sys
-import time
 import traceback
 
 # EXTERNAL LIB
 import tweepy
 
 # PROJECT LIB
+import gather
+from extern import log
 
 # CONSTANTS
-TIME_FORMAT = '%H:%M:%S'
-
-def log(*args):
-    '''More informative print debugging'''
-    t = time.strftime(TIME_FORMAT, time.localtime())
-    s = ' '.join([str(arg) for arg in args])
-    print(f'[{t}]: {s}')
 
 def main():
     try:
@@ -36,10 +30,9 @@ def main():
         traceback.print_exc()
         sys.exit(-1)
 
-    api = tweepy.API(auth)
-    public_tweets = api.home_timeline()
+    api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
     
-    log('Hello, world!')
+    gather.trending_tweets(api)
 
 if __name__ == '__main__':
     log('usage: python driver')
