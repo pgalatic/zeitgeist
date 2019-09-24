@@ -25,11 +25,15 @@ from extern import log
 def parse_args():
     ap = argparse.ArgumentParser()
     
-    ap.add_argument('--num_topics', nargs='?', const=1, default=1,
-        help='How many datasets should be analyzed?')
+    # Number of topics to analyze.
+    ap.add_argument('--num_topics', nargs='?', type=int, const=1, default=1,
+        help='How many datasets should be analyzed? [1]')
     # Default location of interest is the United States.
-    ap.add_argument('--woeid', nargs='?', const=23424977, default=23424977,
-        help='Yahoo \"Where On Earth\" ID. Trends will be sourced from this location')
+    ap.add_argument('--woeid', nargs='?', type=int, const=23424977, default=23424977,
+        help='Yahoo \"Where On Earth\" ID. Trends will be sourced from this location. [23424977 (United States)]')
+    # The duration to "stream" tweets and gather them in real time.
+    ap.add_argument('--stream_length', nargs='?', type=int, const=0, default=0,
+        help='How long should tweets be collected in real time? [0]')
     
     return ap.parse_args()
 
@@ -48,7 +52,11 @@ def main():
         wait_on_rate_limit=True, 
         wait_on_rate_limit_notify=True)
     
-    gather.trending_tweets(api, args.woeid, args.num_topics)
+    gather.trending_tweets(
+        api,
+        woeid=args.woeid,
+        num_topics=args.num_topics,
+        stream_length=args.stream_length)
 
 if __name__ == '__main__':
     log('usage: python driver')

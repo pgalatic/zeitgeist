@@ -10,6 +10,7 @@
 import os
 import re
 import csv
+import time
 import pprint
 import shutil
 import pathlib
@@ -17,6 +18,7 @@ from datetime import datetime, timedelta
 
 # EXTERNAL LIB
 import tweepy
+import progressbar as pbar
 
 # PROJECT LIB
 from extern import log
@@ -24,7 +26,23 @@ from extern import log
 # CONSTANTS
 DATA_DIR = pathlib.Path('data/')
 
-def trending_tweets(api, woeid, num_topics, max_tweets=10000, max_chars=1000000):
+MAX_TWEETS = 10 ** 4
+MAX_CHARS = 10 ** 7
+
+class Listener(tweepy.StreamListener):
+    
+    def __init__(self, csv_writer, timeout):
+        self.csv_writer = csv_writer
+        self.timeout = timeout
+        self.start = time.time()
+    
+    def on_status(self, status):
+        self.csv_writer.writerow([status.timestamp, status.full_text])
+        if time.time() - self.start > self.timeout:
+            return False
+        return True
+
+def trending_tweets(api, woeid, num_topics, stream_length):
     
     # Grabs all trending topics with a known tweet volume.
     topics = [topic for topic in api.trends_place(woeid)[0]['trends'] if topic['tweet_volume'] != None]
@@ -57,33 +75,41 @@ def trending_tweets(api, woeid, num_topics, max_tweets=10000, max_chars=1000000)
             with open(fname, 'w+', newline='', encoding='utf-8') as topicfile:
             
                 # Use a cursor to find tweets and a csv writer to record them.
+                # Retweets would lead to data duplication, so those are skipped.
                 wtr = csv.writer(topicfile)
                 cursor = tweepy.Cursor(
                     api.search, 
-                    q=hashtag, 
-                    count=max_tweets, 
-                    lang='en', 
+                    q=hashtag + '-filter:retweets',
+                    count=MAX_TWEETS,
+                    lang='en',
                     since=datetime.strftime(datetime.now() - timedelta(1), '%Y-%m-%d'),
                     tweet_mode='extended',
                     rpp=100
                 )
                 
-                for tweet in cursor.items(max_tweets):
+                for tweet in cursor.items():
                     tweet = tweet._json
-
-                    # Retweets would lead to data duplication, so those are skipped.
-                    if not tweet['retweeted'] and 'RT @' not in tweet['full_text']:
                         
-                        # Record the body of the tweets and the timestamp.
-                        text = tweet['full_text']
-                        timestamp = tweet['created_at']
+                    # Record the body of the tweets and the timestamp.
+                    text = tweet['full_text']
+                    timestamp = tweet['created_at']
+                
+                    wtr.writerow([timestamp, text])
                     
-                        wtr.writerow([timestamp, text])
-                        
-                        total_chars += len(text)
-                        total_tweets += 1
-                        
-                        if total_chars > max_chars or total_tweets > max_tweets: break
+                    total_chars += len(text)
+                    total_tweets += 1
+                    
+                    if total_chars > MAX_CHARS or total_tweets > MAX_TWEETS:
+                        log('...That\'s enough for now.')
+                        break
+                
+                if stream_length > 0:
+                    listener = Listener(wtr, stream_length)
+                    stream = tweepy.Stream(auth=api.auth, listener=listener)
+                    stream.filter(track=[hashtag], is_async=True)
+                    log(f'Streaming for {stream_length} seconds...')
+                    for idx in pbar.progressbar(range(stream_length)):
+                        time.sleep(1)
     
         log(f'stats for {hashtag}')
         log(f'\ttotal_chars:\t{total_chars}')
