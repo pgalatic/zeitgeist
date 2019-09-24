@@ -10,6 +10,7 @@
 import os
 import re
 import csv
+import pdb
 import time
 import pprint
 import shutil
@@ -18,38 +19,25 @@ from datetime import datetime, timedelta
 
 # EXTERNAL LIB
 import tweepy
-import progressbar as pbar
 
 # PROJECT LIB
 from extern import log
 
 # CONSTANTS
 DATA_DIR = pathlib.Path('data/')
+FILTER = ' -filter:retweets'
+MAX_TWEETS = 10 ** 9
+MAX_CHARS = 10 ** 9
 
-MAX_TWEETS = 10 ** 4
-MAX_CHARS = 10 ** 7
-
-class Listener(tweepy.StreamListener):
-    
-    def __init__(self, csv_writer, timeout):
-        self.csv_writer = csv_writer
-        self.timeout = timeout
-        self.start = time.time()
-    
-    def on_status(self, status):
-        self.csv_writer.writerow([status.timestamp, status.full_text])
-        if time.time() - self.start > self.timeout:
-            return False
-        return True
-
-def trending_tweets(api, woeid, num_topics, stream_length):
+def trending_tweets(api, woeid, num_topics):
     
     # Grabs all trending topics with a known tweet volume.
     topics = [topic for topic in api.trends_place(woeid)[0]['trends'] if topic['tweet_volume'] != None]
     
     # Sort trending topics by their tweet volume. Topics with more tweets are more likely to be
     # interesting, and more data is always helpful.
-    top_topics = sorted(topics, key=lambda topic: topic['tweet_volume'], reverse=True)
+    # top_topics = sorted(topics, key=lambda topic: topic['tweet_volume'], reverse=True)
+    top_topics = topics
     
     # Create the data folder if it doesn't exist.
     if not os.path.isdir(DATA_DIR):
@@ -66,7 +54,7 @@ def trending_tweets(api, woeid, num_topics, stream_length):
         if re.search('[a-zA-Z]', hashtag):
         
             # Search for tweets matching the hashtag.
-            total_chars = 0
+            total_length = 0
             total_tweets = 0
             tweet_idx = 0
                         
@@ -79,12 +67,11 @@ def trending_tweets(api, woeid, num_topics, stream_length):
                 wtr = csv.writer(topicfile)
                 cursor = tweepy.Cursor(
                     api.search, 
-                    q=hashtag + '-filter:retweets',
-                    count=MAX_TWEETS,
+                    q=hashtag + FILTER,
+                    count=100,
                     lang='en',
                     since=datetime.strftime(datetime.now() - timedelta(1), '%Y-%m-%d'),
-                    tweet_mode='extended',
-                    rpp=100
+                    tweet_mode='extended'
                 )
                 
                 for tweet in cursor.items():
@@ -96,21 +83,13 @@ def trending_tweets(api, woeid, num_topics, stream_length):
                 
                     wtr.writerow([timestamp, text])
                     
-                    total_chars += len(text)
+                    total_length += len(text)
                     total_tweets += 1
                     
-                    if total_chars > MAX_CHARS or total_tweets > MAX_TWEETS:
-                        log('...That\'s enough for now.')
+                    if total_length > MAX_CHARS or total_tweets > MAX_TWEETS:
+                        log('...Quota met.')
                         break
-                
-                if stream_length > 0:
-                    listener = Listener(wtr, stream_length)
-                    stream = tweepy.Stream(auth=api.auth, listener=listener)
-                    stream.filter(track=[hashtag], is_async=True)
-                    log(f'Streaming for {stream_length} seconds...')
-                    for idx in pbar.progressbar(range(stream_length)):
-                        time.sleep(1)
     
         log(f'stats for {hashtag}')
-        log(f'\ttotal_chars:\t{total_chars}')
+        log(f'\ttotal_length:\t{total_length}')
         log(f'\ttotal_tweets:\t{total_tweets}')
