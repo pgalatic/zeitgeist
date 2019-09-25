@@ -3,6 +3,7 @@
 
 driver
 data/
+raw/
 
 ### DEFAULT .GITIGNORE
 

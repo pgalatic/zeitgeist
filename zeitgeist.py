@@ -18,6 +18,7 @@ import tweepy
 
 # PROJECT LIB
 import gather
+import purify
 from extern import log
 
 # CONSTANTS
@@ -31,6 +32,9 @@ def parse_args():
     # Default location of interest is the United States.
     ap.add_argument('--woeid', nargs='?', type=int, const=23424977, default=23424977,
         help='Yahoo \"Where On Earth\" ID. Trends will be sourced from this location. [23424977 (United States)]')
+    # Should we analyze a specific file? If there is no target, then we gather data.
+    ap.add_argument('--target', nargs='?', const=None, default=None,
+        help='Specify a target for analysis, such as \'#WednesdayWisdom\'. If there is no target, perform data collection. [None]')
     
     return ap.parse_args()
 
@@ -45,14 +49,21 @@ def main():
         traceback.print_exc()
         sys.exit(-1)
 
-    api = tweepy.API(auth,
-        wait_on_rate_limit=True, 
-        wait_on_rate_limit_notify=True)
+    log(args.target)
+    if args.target == None:
+        log('Gathering data...')
     
-    gather.trending_tweets(
-        api,
-        woeid=args.woeid,
-        num_topics=args.num_topics)
+        api = tweepy.API(auth,
+            wait_on_rate_limit=True, 
+            wait_on_rate_limit_notify=True)
+        
+        gather.trending_tweets(
+            api,
+            woeid=args.woeid,
+            num_topics=args.num_topics)
+    else:
+        log(f'Purifying {args.target}...')
+        purify.cleanse(args.target)
 
 if __name__ == '__main__':
     log('usage: python driver')

@@ -24,7 +24,7 @@ import tweepy
 from extern import log
 
 # CONSTANTS
-DATA_DIR = pathlib.Path('data/')
+DATA_DIR = pathlib.Path('raw/')
 FILTER = ' -filter:retweets'
 MAX_TWEETS = 10 ** 9
 MAX_CHARS = 10 ** 9
