@@ -11,6 +11,7 @@ import os
 import re
 import csv
 import pdb
+import sys
 import time
 import pprint
 import shutil
@@ -24,7 +25,7 @@ import tweepy
 from extern import log
 
 # CONSTANTS
-DATA_DIR = pathlib.Path('raw/')
+DST_DIR = pathlib.Path('raw/')
 FILTER = ' -filter:retweets'
 MAX_TWEETS = 10 ** 9
 MAX_CHARS = 10 ** 9
@@ -40,8 +41,8 @@ def trending_tweets(api, woeid, num_topics):
     top_topics = topics
     
     # Create the data folder if it doesn't exist.
-    if not os.path.isdir(DATA_DIR):
-        os.mkdir(DATA_DIR)
+    if not os.path.isdir(DST_DIR):
+        os.mkdir(DST_DIR)
     
     # Process the first N topics.
     for trend in top_topics[:num_topics]:
@@ -59,7 +60,7 @@ def trending_tweets(api, woeid, num_topics):
             tweet_idx = 0
                         
             # Make a file to store the tweets in.
-            fname = str(DATA_DIR / (hashtag + '.csv'))
+            fname = str(DST_DIR / (hashtag + '.csv'))
             with open(fname, 'w+', newline='', encoding='utf-8') as topicfile:
             
                 # Use a cursor to find tweets and a csv writer to record them.
@@ -80,8 +81,9 @@ def trending_tweets(api, woeid, num_topics):
                     # Record the body of the tweets and the timestamp.
                     text = tweet['full_text']
                     timestamp = tweet['created_at']
-                
-                    wtr.writerow([timestamp, text])
+                    coords = tweet['coordinates']
+
+                    wtr.writerow([timestamp, text, coords])
                     
                     total_length += len(text)
                     total_tweets += 1

@@ -1,4 +1,6 @@
 # zeitgeist
+For Python 3.6+
+
 Analyze trending twitter topics and use NLP to generate a summary
 
 ## Goals
@@ -26,8 +28,24 @@ Analyze trending twitter topics and use NLP to generate a summary
 - [ ] 9/19:
     - [x] pgalatic: Implement the data collection algorithm
     - [x] tbendlin: 1st draft of phase 1 report
-    - [ ] qxh5696: psuedocode for abstract generation algorithm + its source papers
+    - [x] qxh5696: psuedocode for abstract generation algorithm + its source papers
 - [ ] 9/26
-    - [ ] pgalatic: phase 1 report edited and submitted and add data cleaning if possible
-    - [ ] tbendlin: plan sentiment analysis portion
-    - [ ] qxh5696: carryover from 9/19
+    - [x] pgalatic: phase 1 report edited and submitted and add data cleaning if possible
+    - [x] tbendlin: plan sentiment analysis portion
+    - [x] qxh5696: carryover from 9/19
+- [ ] 10/3
+    - [ ] pgalatic: add geolocation data to scraped tweets (coordinates if possible)
+    - [ ] tbendlin: add overall public opinion of tweets
+    - [ ] qxh5696: hook summarization program into zeitgeist.py and process data
+    
+### Data Collection Pipeline
+
+`python driver`
+* Data is first gathered from tweets unlceaned with these attributes IN ORDER and placed in a CSV file in ~/raw/:
+    * timestamp
+    * text
+    * geolocation
+`python driver --target=[HASHTAG]`
+* Data from target hashtag is extracted from ~/raw/HASHTAG.csv and preprocessed, removing:
+    * stopwords
+    * non-alphanumeric characters excluding ['@#]

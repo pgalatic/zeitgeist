@@ -3,13 +3,10 @@
 # Program to preprocess Twitter text data and create 'blob files' that contain 
 # only the text.
 #
-# Open questions:
-#   - Do we want to remove usernames / hashtags? They carry important info.
-#   - Is there a good way to remove apostraphes, or do we preserve their info?
-#
 
 # STD LIB
 import re
+import os
 import csv
 import sys
 import time
@@ -31,6 +28,9 @@ def cleanse(target):
     length_before = 0
     length_after = 0
     all_len_diffs = []
+
+    if not os.path.isdir(DST_DIR):
+        os.mkdir(DST_DIR)
 
     try:
         with open(SRC_DIR / (target + '.csv'), 'r', encoding='utf-8') as src_file:
@@ -58,7 +58,7 @@ def cleanse(target):
                     
                     wtr.writerow([row[0], text])
     except IOError:
-        log('Could not open file!')
+        log(f'Could not open file: {target}.csv!')
         sys.exit(1)
     
     percent_reduction = round(((length_before - length_after) / length_before) * 100, 3)
