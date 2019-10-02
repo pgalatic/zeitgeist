@@ -14,7 +14,6 @@ import string
 import pathlib
 
 # EXTERNAL LIB
-from spacy.lang.en.stop_words import STOP_WORDS
 
 # PROJECT LIB
 from extern import log
@@ -49,14 +48,14 @@ def cleanse(target):
                     # text = re.sub('(&amp;)|(@[A-Za-z0-9]+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)', ' ', row[1])
                     # Currently only using blocks 1, 3, and 4. TODO: Do we want to remove usernames?
                     text = re.sub('(&amp;)|([^0-9A-Za-z\'@# \t])|(\w+:\/\/\S+)', ' ', row[1])
-                    
-                    # Remove any stopwords and single letters.
-                    text = ' '.join([term for term in text.split() if term not in STOP_WORDS and len(term) > 1])
+                    # Get rid of excess spaces.
+                    text = re.sub('(  +)', ' ', text)
                     
                     length_after += len(text)
                     all_len_diffs.append((len(row[1]) - len(text)) / len(row[1]))
                     
-                    wtr.writerow([row[0], text])
+                    row[1] = text
+                    wtr.writerow(row)
     except IOError:
         log(f'Could not open file: {target}.csv!')
         sys.exit(1)

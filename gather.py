@@ -82,6 +82,7 @@ def trending_tweets(api, woeid, num_topics):
                     text = tweet['full_text']
                     timestamp = tweet['created_at']
                     coords = tweet['coordinates']
+                    if coords is not None: log(coords)
 
                     wtr.writerow([timestamp, text, coords])
                     
