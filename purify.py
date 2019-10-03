@@ -16,11 +16,9 @@ import pathlib
 # EXTERNAL LIB
 
 # PROJECT LIB
-from extern import log
+from extern import *
 
 # CONSTANTS
-SRC_DIR = pathlib.Path('raw/')
-DST_DIR = pathlib.Path('data/')
 TIME_FORMAT = '%H:%M:%S'
 
 def cleanse(target):
@@ -28,12 +26,12 @@ def cleanse(target):
     length_after = 0
     all_len_diffs = []
 
-    if not os.path.isdir(DST_DIR):
-        os.mkdir(DST_DIR)
+    if not os.path.isdir(DATA_DIR):
+        os.mkdir(DATA_DIR)
 
     try:
-        with open(SRC_DIR / (target + '.csv'), 'r', encoding='utf-8') as src_file:
-            with open(DST_DIR / (target + '.csv.'), 'w', newline='', encoding='utf-8') as dst_file:
+        with open(str(RAW_DIR / target) + '.csv', 'r', encoding='utf-8') as src_file:
+            with open(str(DATA_DIR / target) + '.csv.', 'w', newline='', encoding='utf-8') as dst_file:
                 rdr = csv.reader(src_file)
                 wtr = csv.writer(dst_file)
                 
@@ -47,7 +45,7 @@ def cleanse(target):
                     # Block 4 removes URLs.
                     # text = re.sub('(&amp;)|(@[A-Za-z0-9]+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)', ' ', row[1])
                     # Currently only using blocks 1, 3, and 4. TODO: Do we want to remove usernames?
-                    text = re.sub('(&amp;)|([^0-9A-Za-z\'@# \t])|(\w+:\/\/\S+)', ' ', row[1])
+                    text = re.sub('(&amp;)|([^0-9A-Za-z\'@# ])|(\w+:\/\/\S+)', ' ', row[1])
                     # Get rid of excess spaces.
                     text = re.sub('(  +)', ' ', text)
                     
