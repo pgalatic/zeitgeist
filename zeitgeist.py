@@ -37,7 +37,8 @@ def parse_args():
     ap.add_argument('--target', nargs='?', const=None, default=None,
         help='Specify a target for analysis, such as \'#WednesdayWisdom\'. If there is no target, perform data collection. [None]')
     # Summarize argument
-    ap.add_argument('--summarize', nargs='?', const=None, default=None, help='summarizes a collection of texts given a corpus')
+    ap.add_argument('--summarize', nargs='?', const=None, default=None,
+                    help='summarizes a collection of texts given a corpus. Usage: "python3 driver.py --summarize [path-to-corpus-file, ex. ./raw/#ImpeachTrump.csv]"')
 
     return ap.parse_args()
 
