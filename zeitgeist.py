@@ -19,13 +19,14 @@ import tweepy
 # PROJECT LIB
 import gather
 import purify
+from text_summarization import summarize_tweets
 from extern import log
 
 # CONSTANTS
 
 def parse_args():
     ap = argparse.ArgumentParser()
-    
+
     # Number of topics to analyze.
     ap.add_argument('--num_topics', nargs='?', type=int, const=1, default=1,
         help='How many datasets should be analyzed? [1]')
@@ -35,12 +36,14 @@ def parse_args():
     # Should we analyze a specific file? If there is no target, then we gather data.
     ap.add_argument('--target', nargs='?', const=None, default=None,
         help='Specify a target for analysis, such as \'#WednesdayWisdom\'. If there is no target, perform data collection. [None]')
-    
+    # Summarize argument
+    ap.add_argument('--summarize', nargs='?', const=None, default=None, help='summarizes a collection of texts given a corpus')
+
     return ap.parse_args()
 
 def main():
     args = parse_args()
-
+    log('Args: {}'.format(args))
     try:
         auth = tweepy.OAuthHandler(os.environ['CONSUMER_KEY'], os.environ['CONSUMER_SECRET'])
         auth.set_access_token(os.environ['ACCESS_TOKEN'], os.environ['ACCESS_TOKEN_SECRET'])
@@ -50,19 +53,28 @@ def main():
         sys.exit(-1)
 
     log(args.target)
-    if args.target == None:
-        log('Gathering data...')
-    
-        api = tweepy.API(auth,
-            wait_on_rate_limit=True, 
-            wait_on_rate_limit_notify=True)
-        
-        gather.trending_tweets(
-            api,
-            woeid=args.woeid,
-            num_topics=args.num_topics)
+    # if args.target == None:
+    #     log('Gathering data...')
+
+    #     api = tweepy.API(auth,
+    #         wait_on_rate_limit=True,
+    #         wait_on_rate_limit_notify=True)
+
+    #     gather.trending_tweets(
+    #         api,
+    #         woeid=args.woeid,
+    #         num_topics=args.num_topics)
+    if args.summarize != None:
+        log('Summarizing corpus of text for {}...'.format(args.summarize))
+        f = open(args.summarize)
+        corpus = ""
+        for line in f:
+            corpus += line
+        summary = summarize_tweets(corpus)
+        print(summary)
+
     else:
-        log(f'Purifying {args.target}...')
+        log('Purifying {args.target}...')
         purify.cleanse(args.target)
 
 if __name__ == '__main__':
