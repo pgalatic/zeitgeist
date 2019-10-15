@@ -77,6 +77,8 @@ def core_summary_function(document, is_twitter_corpus=False, lang='en', max_sent
 
 def summarize_tweets(target):
     '''Summarizes tweets passed in from zeitgeist'''
+    log(f'Summarizing {target}...')
+
     with open(str(DATA_DIR / target) + '.csv') as data:
         # Read data from csv file
         rdr = csv.reader(data)

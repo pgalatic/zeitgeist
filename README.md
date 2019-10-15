@@ -66,6 +66,11 @@ python driver --full
     - [x] pgalatic: add geolocation data to scraped tweets (coordinates if possible)
     - [ ] tbendlin: add overall public opinion of tweets
     - [ ] qxh5696: hook summarization program into zeitgeist.py and process data
+- [ ] 10/17
+    - [ ] pgalatic: add agglomerative clustering using word vectors and cosine similarity
+        - Do we want to add spellchecking for text normalization?
+    - [ ] tbendlin: add kmeans/density clustering using sentiment
+    - [ ] qxh5696: improve summarization
     
 ### Data Collection Pipeline
 
@@ -82,6 +87,10 @@ python driver --purify=[HASHTAG]
 * Data from target hashtag is extracted from ~/raw/HASHTAG.csv and preprocessed, removing:
     * stopwords
     * non-alphanumeric characters excluding ['@#]
+```
+python driver --cluster=[HASHTAG]
+```
+* Data from target hashtag is read into memory and clustered. The most representative tweets are printed to console and a visualization is saved to /report/.
 ```
 python driver --summarize=[HASHTAG]
 ```
