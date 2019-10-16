@@ -20,6 +20,7 @@ import tweepy
 # PROJECT LIB
 import gather
 import purify
+import cluster
 import summarize
 import sentiment
 from extern import *
@@ -37,6 +38,9 @@ def arg_parser():
     # Run data purification on [flie]
     ap.add_argument('--purify', nargs='?', const=None, default=None,
         help='Specify a target for data cleaning, e.g. \'--purify=#WednesdayWisdom\'. [None]')
+    # Run data clustering on [file]
+    ap.add_argument('--cluster', nargs='?', const=None, default=None,
+        help='Specify a target for tweet clustering, e.g. \'--cluster=#WednesdayWisdom\'. [None]')
     # Run data summarization on [file]
     ap.add_argument('--summarize', nargs='?', const=None, default=None,
         help='Summarizes a file, e.g. \'--summarize=#WednesdayWisdom\'. [None]')
@@ -56,9 +60,14 @@ def arg_parser():
 
 def most_recent_file(dir):
     '''Gets the most recent file from a directory.'''
-    most_recent_file = max(glob.glob(str(dir / '*.csv')), key=os.path.getctime)
+    recent_files = glob.glob(str(dir / '*.csv'))
+    if len(recent_files) < 1:
+        log(f'WARN: There are no recent files in the {RAW_DIR} ' +\
+            'directory. Are you sure you have any data?')
+        sys.exit(1)
+    most_recent_file = max(recent_files, key=os.path.getctime)
+    
     topic_name = os.path.splitext(os.path.basename(most_recent_file))[0]
-    log(topic_name)
     return topic_name
 
 def main():
@@ -91,18 +100,26 @@ def main():
     
     # This may have changed since the last gather.
     most_recent_topic = most_recent_file(RAW_DIR)
+    if not os.path.exists(REPORT_DIR):
+        os.mkdir(REPORT_DIR)
     
     if args.purify or args.full:
         # If we want to clean data (or we're running everything), grab a target
         # and feed it through the data cleaning algorithm. If a target isn't 
         # specified, the most recent file is used.
         purify_target = args.purify if args.purify else most_recent_topic
-        log(f'Purifying {purify_target}...')
         purify.cleanse(purify_target)
+    if args.cluster or args.full:
+        # Same as above, but for clustering.
+        cluster_target = args.cluster if args.cluster else most_recent_topic
+        if not os.path.exists(str(DATA_DIR / cluster_target) + '.csv'):
+            purify.cleanse(cluster_target)
+        cluster.agglomerate(cluster_target)
     if args.summarize or args.full:
         # Same as above, but for text summarization.
         summarize_target = args.summarize if args.summarize else most_recent_topic
-        log(f'Summarizing {summarize_target}...')
+        if not os.path.exists(str(DATA_DIR / summarize_target) + '.csv'):
+            purify.cleanse(summarize_target)
         summary = summarize.summarize_tweets(summarize_target)
         log(summary)
     if args.sentiment or args.full:
@@ -113,7 +130,7 @@ def main():
         sentiment.numerical_sentiment_analysis(tweets_df)
         sentiment.sentiment_clustering(tweets_df)
     
-    if not (args.full or args.gather or args.purify or args.summarize):
+    if not (args.full or args.gather or args.purify or args.cluster or args.summarize):
         parser.print_help(sys.stdout)
 
 if __name__ == '__main__':
