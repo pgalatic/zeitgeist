@@ -130,7 +130,7 @@ def main():
         sentiment.numerical_sentiment_analysis(tweets_df)
         sentiment.sentiment_clustering(tweets_df)
     
-    if not (args.full or args.gather or args.purify or args.cluster or args.summarize):
+    if not (args.full or args.gather or args.purify or args.cluster or args.summarize or args.sentiment):
         parser.print_help(sys.stdout)
 
 if __name__ == '__main__':
