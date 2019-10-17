@@ -22,6 +22,7 @@ import gather
 import purify
 import cluster
 import summarize
+import sentiment
 from extern import *
 
 def arg_parser():
@@ -43,6 +44,9 @@ def arg_parser():
     # Run data summarization on [file]
     ap.add_argument('--summarize', nargs='?', const=None, default=None,
         help='Summarizes a file, e.g. \'--summarize=#WednesdayWisdom\'. [None]')
+    # Run sentiment analysis on [file]
+    ap.add_argument('--sentiment', nargs='?', const=None, default=None,
+        help='Performs sentiment analysis on a file, e.g. \'--sentiment=#ImpeachTrump\'. [None]')
         
     ### Arguments modifying behavior
     # Number of topics to analyze.
@@ -118,8 +122,15 @@ def main():
             purify.cleanse(summarize_target)
         summary = summarize.summarize_tweets(summarize_target)
         log(summary)
+    if args.sentiment or args.full:
+        # Same as above, but for sentiment analysis
+        sentiment_target = args.sentiment if args.sentiment else most_recent_topic
+        tweets = sentiment.reduce_to_indv_tweet_text(sentiment_target)
+        tweets_df = sentiment.get_sentiment_data_frame(tweets)
+        sentiment.numerical_sentiment_analysis(tweets_df)
+        sentiment.sentiment_clustering(tweets_df)
     
-    if not (args.full or args.gather or args.purify or args.cluster or args.summarize):
+    if not (args.full or args.gather or args.purify or args.cluster or args.summarize or args.sentiment):
         parser.print_help(sys.stdout)
 
 if __name__ == '__main__':

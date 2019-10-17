@@ -113,3 +113,9 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# MacOS directory files
+.DS_STORE
+driver.py
+.vscode/launch.json
+.vscode/settings.json

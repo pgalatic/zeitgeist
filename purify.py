@@ -1,6 +1,6 @@
 # author: Paul Galatic
 #
-# Program to preprocess Twitter text data and create 'blob files' that contain 
+# Program to preprocess Twitter text data and create 'blob files' that contain
 # only the text.
 #
 
@@ -58,7 +58,7 @@ def cleanse(target):
     
     percent_reduction = round(((length_before - length_after) / length_before) * 100, 3)
     average_reduction = round((sum(all_len_diffs) / len(all_len_diffs) * 100), 3)
-    
+
     log(f'Stats for {target}:')
     log(f'\ttotal_tweets:\t\t{len(all_len_diffs)}')
     log(f'\tlength_before:\t\t{length_before}')
@@ -67,4 +67,3 @@ def cleanse(target):
     log(f'\tpercent_reduction:\t{percent_reduction}%')
     # Average percentage reduction per tweet.
     log(f'\taverage_reduction:\t{average_reduction}%')
-    
