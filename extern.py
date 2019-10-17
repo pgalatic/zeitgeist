@@ -11,6 +11,8 @@ import time
 import pathlib
 
 # EXTERNAL LIB
+import nltk
+nltk.download('stopwords')
 from nltk.corpus import stopwords
 
 # CONSTANTS
@@ -26,7 +28,7 @@ GATHER_MAX_CHARS = 10 ** 9
 STOPWORDS = set(stopwords.words('english'))
 
 NUM_CLUSTERS = 3
-CLUSTERING_SAMPLES = 2000
+CLUSTERING_SAMPLES = 1000
 CORRECT_SPELLING = False
 FILTER_STOPWORDS = True # used in cluster.py
 

@@ -9,13 +9,14 @@
 # STD LIB
 import os
 import csv
+import pdb
 
 # EXTERNAL LIB
 import autocorrect
 import numpy as np
+from scipy.spatial import distance
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.feature_extraction.text import CountVectorizer
-from scipy.cluster.hierarchy import dendrogram, linkage
 
 # PROJECT LIB
 from extern import *
@@ -29,8 +30,15 @@ def filter(text, speller):
 
 def find_argcenter(cluster):
     '''Returns the index of the point closest to the mean of the cluster.'''
-    mean = np.mean(cluster, axis=0)
-    return np.abs(cluster - mean).argmin()
+    center = np.mean(cluster, axis=0)
+    closest = None
+    least_dist = 1
+    for idx in range(len(cluster)):
+        dist = distance.cosine(cluster[idx], center)
+        if dist < least_dist:
+            least_dist = dist
+            closest = idx
+    return idx
 
 def agglomerate(target):
     log(f'Clustering {target}...')
