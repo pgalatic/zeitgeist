@@ -134,7 +134,7 @@ def numerical_sentiment_analysis(tweets_df):
     @param tweets_df (Dataframe) dataframe of tweets and sentiment scores
     @param debug (boolean) flag for printing out kmeans information
 '''
-def sentiment_clustering(tweets_df, debug=False, plot_clustering_results=False):
+def sentiment_clustering(tweets_df, debug=False, plot_clusters=False):
     sentiment_vector = tweets_df[['pos', 'neg', 'neu']].values
 
     k_means_results = run_k_means(sentiment_vector, debug)
@@ -147,7 +147,7 @@ def sentiment_clustering(tweets_df, debug=False, plot_clustering_results=False):
     tweets_df['dbscan_clusters'] = dbscan_results.labels_
     print_clustering_centroids_data(tweets_df, 'dbscan_clusters', num_dbscan_clusters)
 
-    if plot_clustering_results:
+    if plot_clusters:
         plot_clustering_results(tweets_df, 'kmeans_clusters', num_kmeans_clusters, plot_title="K-Means Numerical Sentiment Clustering Results")
         plot_clustering_results(tweets_df, 'dbscan_clusters', num_dbscan_clusters, plot_title="DBSCAN Numerical Sentiment Clustering Results")
 
@@ -310,4 +310,4 @@ if __name__ == '__main__':
     tweets = reduce_to_indv_tweet_text('#ImpeachTrump')
     tweets_df = get_sentiment_data_frame(tweets)
     numerical_sentiment_analysis(tweets_df)
-    sentiment_clustering(tweets_df, plot_clustering_results=True)
+    sentiment_clustering(tweets_df, plot_clusters=True)
