@@ -32,6 +32,15 @@ CLUSTERING_SAMPLES = 1000
 CORRECT_SPELLING = False
 FILTER_STOPWORDS = True # used in cluster.py
 
+# Constants for sentiment.py
+K_START = 3
+K_END = 15
+BEST_K_IDX = 5
+
+NEUTRAL_CUTOFF = 0.1
+
+MAX_PRINTED_CLUSTSERS = 5
+
 def log(*args):
     '''More informative print debugging'''
     t = time.strftime(TIME_FORMAT, time.localtime())
