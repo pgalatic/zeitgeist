@@ -25,18 +25,6 @@ import matplotlib.cm as cm
 from mpl_toolkits.mplot3d import Axes3D
 from extern import *
 
-DATA_DIR = 'data'
-FILE_SEPARATOR = '/'
-FILE_EXTENSION = '.csv'
-
-K_START = 3
-K_END = 15
-BEST_K_IDX = 5
-
-NEUTRAL_CUTOFF = 0.1
-
-LOG_LEVEL = 20 #info
-
 '''
     Retrieves the tweets from a given .csv file.
 
@@ -44,7 +32,7 @@ LOG_LEVEL = 20 #info
     @returns (list) list of tweets
 '''
 def reduce_to_indv_tweet_text(target):
-    pathname = DATA_DIR + FILE_SEPARATOR + target + FILE_EXTENSION
+    pathname = str(DATA_DIR / target) + '.csv'
     if not isfile(pathname):
         log(f'data file {pathname} does not exist.')
         exit(1)
@@ -146,20 +134,22 @@ def numerical_sentiment_analysis(tweets_df):
     @param tweets_df (Dataframe) dataframe of tweets and sentiment scores
     @param debug (boolean) flag for printing out kmeans information
 '''
-def sentiment_clustering(tweets_df, debug=False):
+def sentiment_clustering(tweets_df, debug=False, plot_clustering_results=False):
     sentiment_vector = tweets_df[['pos', 'neg', 'neu']].values
 
     k_means_results = run_k_means(sentiment_vector, debug)
     num_kmeans_clusters = k_means_results.labels_.max() + 1
     tweets_df['kmeans_clusters'] = k_means_results.labels_
-    plot_clustering_results(tweets_df, 'kmeans_clusters', num_kmeans_clusters)
     print_clustering_centroids_data(tweets_df, 'kmeans_clusters', num_kmeans_clusters, k_means_results.cluster_centers_)
 
     dbscan_results = run_dbscan(sentiment_vector)
     num_dbscan_clusters = dbscan_results.labels_.max() + 1
     tweets_df['dbscan_clusters'] = dbscan_results.labels_
-    plot_clustering_results(tweets_df, 'dbscan_clusters', num_dbscan_clusters)
     print_clustering_centroids_data(tweets_df, 'dbscan_clusters', num_dbscan_clusters)
+
+    if plot_clustering_results:
+        plot_clustering_results(tweets_df, 'kmeans_clusters', num_kmeans_clusters, plot_title="K-Means Numerical Sentiment Clustering Results")
+        plot_clustering_results(tweets_df, 'dbscan_clusters', num_dbscan_clusters, plot_title="DBSCAN Numerical Sentiment Clustering Results")
 
 '''
     Helper method that will run KMeans on the twitter dataframe.
@@ -214,7 +204,7 @@ def run_dbscan(tweets_df):
     @param cluster_label (string) pandas dataframe key for clustering results
     @param num_clusters (int) the number of clusters for the label
 '''
-def plot_clustering_results(tweets_df, cluster_label, num_clusters):
+def plot_clustering_results(tweets_df, cluster_label, num_clusters, plot_title="Clustering of Sentiment Distribution"):
     figure = plt.figure()
     axes = figure.add_subplot(111, projection='3d')
 
@@ -229,7 +219,7 @@ def plot_clustering_results(tweets_df, cluster_label, num_clusters):
 
         axes.scatter(x_vals, y_vals, z_vals, color=next(colors), label=label)
 
-    plt.title('Clustering of Sentiment Distribution')
+    plt.title(plot_title)
     axes.set_xlabel('Positive')
     axes.set_ylabel('Negative')
     axes.set_zlabel('Neutral')
@@ -237,7 +227,7 @@ def plot_clustering_results(tweets_df, cluster_label, num_clusters):
     plt.show()
 
 '''
-    Prints the tweets at the center of each cluster.
+    Prints the tweets at the center of the biggest clusters.
 
     Since KMeans result supplies the coordinates of these centroids already, there is an optional
     param for this field to pass in a pre-computed list of centroids.
@@ -251,6 +241,7 @@ def plot_clustering_results(tweets_df, cluster_label, num_clusters):
 '''
 def print_clustering_centroids_data(tweets_df, cluster_label, num_clusters, cluster_centers=None):
 
+    log('Printing out the largest clusters...')
     if cluster_centers is None or not cluster_centers.any():
         cluster_centers = []
         for cluster in range(num_clusters):
@@ -260,7 +251,8 @@ def print_clustering_centroids_data(tweets_df, cluster_label, num_clusters, clus
             neu = cluster_df[['neu']].values
             cluster_centers.append((pos.sum() / len(pos), neg.sum() / len(neg), neu.sum() / len(neu)))
 
-    for cluster in range(num_clusters):
+    biggest_clusters = get_k_biggest_clusters(tweets_df, cluster_label, num_clusters)
+    for cluster in biggest_clusters:
         
         centroid = cluster_centers[cluster]
         cluster_points = tweets_df[tweets_df[cluster_label] == cluster]
@@ -281,9 +273,41 @@ def print_clustering_centroids_data(tweets_df, cluster_label, num_clusters, clus
         log('Negative: ', center_point['neg'])
         log('Neutral: ', center_point['neu'])
 
+"""
+    Helper function that will get the biggest k clusters, on default set to global
+    constant.
+
+    @param tweets_df (Dataframe) dataframe of tweets and sentiment scores
+    @param cluster_label (string) pandas dataframe key for clustering results
+    @param num_clusters (int) the number of clusters for the label
+"""
+def get_k_biggest_clusters(tweets_df, cluster_label, num_clusters, k=MAX_PRINTED_CLUSTSERS):
+    cluster_sizes = {}
+    for cluster in range(num_clusters):
+        cluster_sizes[cluster] = len(tweets_df[tweets_df[cluster_label] == cluster])
+    
+    biggest_clusters = []
+    smallest_cluster = -1
+    for cluster_key in cluster_sizes:
+        if len(biggest_clusters) < k:
+            biggest_clusters.append(cluster_key)
+            if smallest_cluster == -1 or cluster_sizes[smallest_cluster] > cluster_sizes[cluster_key]:
+                smallest_cluster = cluster_key
+        else:
+            if cluster_sizes[cluster_key] < cluster_sizes[smallest_cluster]:
+                continue
+
+            biggest_clusters.remove(smallest_cluster)
+            biggest_clusters.append(cluster_key)
+            smallest_cluster = cluster_key
+            for cluster in biggest_clusters:
+                if cluster_sizes[cluster_key] < cluster_sizes[smallest_cluster]:
+                    smallest_cluster = cluster_key
+    return biggest_clusters
+
 if __name__ == '__main__':
 
     tweets = reduce_to_indv_tweet_text('#ImpeachTrump')
     tweets_df = get_sentiment_data_frame(tweets)
     numerical_sentiment_analysis(tweets_df)
-    sentiment_clustering(tweets_df)
+    sentiment_clustering(tweets_df, plot_clustering_results=True)
