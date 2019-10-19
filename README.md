@@ -9,7 +9,7 @@ Analyze trending twitter topics and use NLP to generate a summary
 ```
 pip install -r requirements.txt
 ```
-1. Install spaCy requirements
+1. Install spaCy requirements (requires administrator privleges)
 ```
 python -m spacy download en
 ```
@@ -37,13 +37,13 @@ python driver --full
 - grab corpus from live twitter data (trending hashtags)
 - areas of analysis:
     - sentiment analysis of corpus (tbendlin)
-        - [ ] are trending topics generally positive or negative?
+        - [x] are trending topics generally positive or negative?
         - [ ] what is the distribution of the sentiment of individual tweets?
-        - [ ] can we locate particularly "outlier" tweets using sentiment?
+        - [x] can we locate particularly "outlier" tweets using sentiment?
     - topic analysis (pgalatic)
         - [x] clean data (remove urls / hashtags)
-        - [ ] what tweets in this trending hashtag are the most important?
-            - [ ] can we cluster tweets and then pick tweets that are representative of those clusters?
+        - [x] what tweets in this trending hashtag are the most important?
+            - [x] can we cluster tweets and then pick tweets that are representative of those clusters?
         - [ ] what is the trending hashtag about in a general sense, and can we summarize that programmaticaly?
         - [ ] what types of hashtags are more or less difficult to analyze in this way?
     - generating an "abstract" of the trending hashtag (qxh5696)
@@ -62,12 +62,12 @@ python driver --full
     - [x] pgalatic: phase 1 report edited and submitted and add data cleaning if possible
     - [x] tbendlin: plan sentiment analysis portion
     - [x] qxh5696: carryover from 9/19
-- [ ] 10/10
+- [x] 10/10
     - [x] pgalatic: add geolocation data to scraped tweets (coordinates if possible)
-    - [ ] tbendlin: add overall public opinion of tweets
-    - [ ] qxh5696: hook summarization program into zeitgeist.py and process data
+    - [x] tbendlin: add overall public opinion of tweets
+    - [x] qxh5696: hook summarization program into zeitgeist.py and process data
 - [ ] 10/17
-    - [ ] pgalatic: add agglomerative clustering using word vectors and cosine similarity
+    - [x] pgalatic: add agglomerative clustering using word vectors and cosine similarity
         - Do we want to add spellchecking for text normalization?
     - [ ] tbendlin: add kmeans/density clustering using sentiment
     - [ ] qxh5696: improve summarization
@@ -100,3 +100,12 @@ python driver --summarize=[HASHTAG]
 
 **October 3rd, 2019**
 ![Results for topic "moot"](sample/snapshot_0.png)
+**October 19th, 2019**
+```
+[13:21:29]: From a group of similar tweets of size 406:
+I really love Assad because #IamTulsi
+[13:21:29]: From a group of similar tweets of size 178:
+If you don't condemn what Hillary Clinton said about Tulsi than you lose my support in the general Period #IamTulsi
+[13:21:29]: From a group of similar tweets of size 96:
+#IamTulsi just look at what people like the clintons bidens obamas have done to our government and our lives #Trump2020LandslideVictory
+```
