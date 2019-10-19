@@ -82,7 +82,7 @@ def main():
         traceback.print_exc()
         sys.exit(-1)
 
-    if args.gather:
+    if args.gather or args.full:
         # If we want to gather data (or we're running everything), call the 
         # Twitter API and gather as much as we can.
         log('Gathering data (crtl+C to stop early)...')
@@ -115,7 +115,7 @@ def main():
         if not os.path.exists(str(DATA_DIR / cluster_target) + '.csv'):
             purify.cleanse(cluster_target)
         cluster.agglomerate(cluster_target)
-    if args.summarize or args.full:
+    if args.summarize:
         # Same as above, but for text summarization.
         summarize_target = args.summarize if args.summarize else most_recent_topic
         if not os.path.exists(str(DATA_DIR / summarize_target) + '.csv'):
