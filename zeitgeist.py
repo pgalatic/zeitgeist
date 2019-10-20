@@ -70,6 +70,7 @@ def main():
         f = open(args.summarize)
         corpus = ""
         for line in f:
+            line = ','.join(line.split(',')[1:])
             corpus += line
         summary = summarize_tweets(corpus)
         print(summary)
