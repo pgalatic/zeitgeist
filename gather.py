@@ -15,20 +15,16 @@ import sys
 import time
 import pprint
 import shutil
-import pathlib
 from datetime import datetime, timedelta
 
 # EXTERNAL LIB
 import tweepy
 
 # PROJECT LIB
-from extern import log
+from extern import *
 
 # CONSTANTS
-DST_DIR = pathlib.Path('raw/')
-FILTER = ' -filter:retweets'
-MAX_TWEETS = 10 ** 9
-MAX_CHARS = 10 ** 9
+
 
 def trending_tweets(api, woeid, num_topics):
     
@@ -41,8 +37,8 @@ def trending_tweets(api, woeid, num_topics):
     top_topics = topics
     
     # Create the data folder if it doesn't exist.
-    if not os.path.isdir(DST_DIR):
-        os.mkdir(DST_DIR)
+    if not os.path.isdir(RAW_DIR):
+        os.mkdir(RAW_DIR)
     
     # Process the first N topics.
     for trend in top_topics[:num_topics]:
@@ -60,7 +56,7 @@ def trending_tweets(api, woeid, num_topics):
             tweet_idx = 0
                         
             # Make a file to store the tweets in.
-            fname = str(DST_DIR / (hashtag + '.csv'))
+            fname = str(RAW_DIR / (hashtag + '.csv'))
             with open(fname, 'w+', newline='', encoding='utf-8') as topicfile:
             
                 # Use a cursor to find tweets and a csv writer to record them.
@@ -68,30 +64,32 @@ def trending_tweets(api, woeid, num_topics):
                 wtr = csv.writer(topicfile)
                 cursor = tweepy.Cursor(
                     api.search, 
-                    q=hashtag + FILTER,
+                    q=hashtag + GATHER_FILTER,
                     count=100,
                     lang='en',
                     since=datetime.strftime(datetime.now() - timedelta(1), '%Y-%m-%d'),
                     tweet_mode='extended'
                 )
                 
-                for tweet in cursor.items():
-                    tweet = tweet._json
-                        
-                    # Record the body of the tweets and the timestamp.
-                    text = tweet['full_text']
-                    timestamp = tweet['created_at']
-                    coords = tweet['coordinates']
-                    if coords is not None: log(coords)
+                try:
+                    for tweet in cursor.items():
+                        tweet = tweet._json
+                            
+                        # Record the body of the tweets and the timestamp.
+                        text = tweet['full_text']
+                        timestamp = tweet['created_at']
+                        coords = tweet['coordinates']
 
-                    wtr.writerow([timestamp, text, coords])
-                    
-                    total_length += len(text)
-                    total_tweets += 1
-                    
-                    if total_length > MAX_CHARS or total_tweets > MAX_TWEETS:
-                        log('...Quota met.')
-                        break
+                        wtr.writerow([timestamp, text, coords])
+                        
+                        total_length += len(text)
+                        total_tweets += 1
+                        
+                        if total_length > GATHER_MAX_CHARS or total_tweets > GATHER_MAX_TWEETS:
+                            log('...Quota met.')
+                            break
+                except KeyboardInterrupt:
+                    pass
     
         log(f'stats for {hashtag}')
         log(f'\ttotal_length:\t{total_length}')
