@@ -128,8 +128,11 @@ def partial(**kwargs):
         # deactivated pending investigation.
         if not os.path.exists(str(DATA_DIR / kwargs['summarize']) + '.csv'):
             purify.cleanse(kwargs['summarize'])
-        # summary = summarize.summarize_tweets(kwargs['summarize'])
-        # log(summary)
+        try:
+            summary = summarize.summarize_tweets(kwargs['summarize'])
+            log(summary)
+        except MemoryError:
+            log('WARN: Not enough memory to perform summarization!')
     if kwargs.get('sentiment'):
         # Same as above, but for sentiment analysis
         tweets = sentiment.reduce_to_indv_tweet_text(kwargs['sentiment'])

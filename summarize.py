@@ -14,10 +14,6 @@ from collections import Counter
 from string import punctuation
 from extern import *
 
-
-TEST_WIKI_ARTICLE = 'Albert Einstein'
-REPEAT_THRESHOLD = 0.30
-
 # Function to test the functionality of text_summarization.py
 def _test():
     wikipedia.set_lang('en')
@@ -41,7 +37,7 @@ def _is_repeat_sentence(s):
 def core_summary_function(document, is_twitter_corpus=False, lang='en', max_sentence_len=30):
     nlp = spacy.load(lang)
     # Had to set it to a high value to process large collections of text
-    nlp.max_length = 4000000
+    nlp.max_length = NLP_DOC_LENGTH
     nlp_doc = nlp(document)
 
     hashtag_set = set()
@@ -107,12 +103,9 @@ def core_summary_function(document, is_twitter_corpus=False, lang='en', max_sent
 
 def summarize_tweets(target):
     '''Summarizes tweets passed in from zeitgeist'''
-    log(f'Summarizing {target}...')
-
-    with open('./' + str(DATA_DIR / target) + '.csv') as data:
-        # Read data from csv file
-        rdr = csv.reader(data)
-        corpus = ' '.join([line[1] for line in rdr])
-        summary = core_summary_function(corpus, is_twitter_corpus=True)
-        return summary
+    selection = sample(target)
+    log(f'Summarizing {len(selection)} tweets from {target}...')
+    corpus = ' '.join(selection)
+    summary = core_summary_function(corpus, is_twitter_corpus=True)
+    return summary
 
