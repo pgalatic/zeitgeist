@@ -66,11 +66,13 @@ python driver --full
     - [x] pgalatic: add geolocation data to scraped tweets (coordinates if possible)
     - [x] tbendlin: add overall public opinion of tweets
     - [x] qxh5696: hook summarization program into zeitgeist.py and process data
-- [ ] 10/17
+- [x] 10/17
     - [x] pgalatic: add agglomerative clustering using word vectors and cosine similarity
         - Do we want to add spellchecking for text normalization?
     - [x] tbendlin: add kmeans/density clustering using sentiment
-    - [ ] qxh5696: improve summarization
+    - [x] qxh5696: improve summarization
+- [ ] 10/24
+    - Discussion / planning on how to condense our report into a PDF or image output document
     
 ### Data Collection Pipeline
 
@@ -98,10 +100,12 @@ python driver --summarize=[HASHTAG]
 
 ### Progress Snapshots
 
-**October 3rd, 2019** -- Results for topic "moot"
+**October 3rd, 2019**
 ![Results for topic "moot"](sample/snapshot_0.png)
-**October 17th, 2019** -- Clustering results for topic "Doral"
-![Initial clustering results](sample/snapshot_1.png)
+**October 17th, 2019**
+![Initial clustering results for tag "Doral"](sample/snapshot_1.png)
+![Initial Kmeans sentiment results](sample/Sentiment_KMEANS_results.png)
+![Initial DBSCAN sentiment results](sample/Sentiment_DBSCAN_results.png)
 **October 19th, 2019**
 ```
 [13:21:29]: From a group of similar tweets of size 406:
