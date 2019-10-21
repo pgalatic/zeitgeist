@@ -37,7 +37,7 @@ GATHER_MAX_CHARS = 10 ** 9
 # Constants for cluster.py
 NUM_CLUSTERS = 3
 DISTANCE_THRESHOLD = 0.975
-CLUSTERING_SAMPLES = 1000
+CLUSTERING_SAMPLES = 2000
 CORRECT_SPELLING = False
 FILTER_STOPWORDS = True # used in cluster.py
 
@@ -45,9 +45,7 @@ FILTER_STOPWORDS = True # used in cluster.py
 K_START = 3
 K_END = 15
 BEST_K_IDX = 5
-
 NEUTRAL_CUTOFF = 0.1
-
 MAX_PRINTED_CLUSTSERS = 5
 
 def log(*args):

@@ -46,7 +46,7 @@ def cleanse(target):
                 # Block 4 removes URLs.
                 # text = re.sub('(&amp;)|(@[A-Za-z0-9]+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)', ' ', row[1])
                 # Currently only using blocks 1, 3, and 4. TODO: Do we want to remove usernames?
-                text = re.sub('(&amp;)|([^0-9A-Za-z\'\"\.@# ])|(\w+:\/\/\S+)', ' ', row[1])
+                text = re.sub('(&amp;)|([^0-9A-Za-z\'"\.,@# ])|(\w+:\/\/\S+)', ' ', row[1])
                 # Get rid of excess spaces.
                 text = re.sub('(  +)', ' ', text)
                 

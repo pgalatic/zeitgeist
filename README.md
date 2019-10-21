@@ -69,7 +69,7 @@ python driver --full
 - [ ] 10/17
     - [x] pgalatic: add agglomerative clustering using word vectors and cosine similarity
         - Do we want to add spellchecking for text normalization?
-    - [ ] tbendlin: add kmeans/density clustering using sentiment
+    - [x] tbendlin: add kmeans/density clustering using sentiment
     - [ ] qxh5696: improve summarization
     
 ### Data Collection Pipeline
@@ -98,8 +98,10 @@ python driver --summarize=[HASHTAG]
 
 ### Progress Snapshots
 
-**October 3rd, 2019**
+**October 3rd, 2019** -- Results for topic "moot"
 ![Results for topic "moot"](sample/snapshot_0.png)
+**October 17th, 2019** -- Clustering results for topic "Doral"
+![Initial clustering results](sample/snapshot_1.png)
 **October 19th, 2019**
 ```
 [13:21:29]: From a group of similar tweets of size 406:
@@ -109,3 +111,4 @@ If you don't condemn what Hillary Clinton said about Tulsi than you lose my supp
 [13:21:29]: From a group of similar tweets of size 96:
 #IamTulsi just look at what people like the clintons bidens obamas have done to our government and our lives #Trump2020LandslideVictory
 ```
+

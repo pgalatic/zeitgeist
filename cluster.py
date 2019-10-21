@@ -47,7 +47,7 @@ def find_argcenter(cluster):
         if dist < least_dist:
             least_dist = dist
             closest = idx
-    return idx
+    return idx, round(1 - least_dist, 2)
 
 def agglomerate(target):
     log(f'Clustering {target}...')
@@ -65,9 +65,12 @@ def agglomerate(target):
         selection = np.random.choice(raw_data, CLUSTERING_SAMPLES)
         corpus = [filter(text, speller) for text in selection]
         
+        # Convert tweets into bags-of-words vectors.
         vectorizer = CountVectorizer()
         vectors = vectorizer.fit_transform(corpus).todense()
 
+        # Cluster the vectors using agglomerative clustering over the cosine 
+        # similarity space.
         log(f'\tClustering {CLUSTERING_SAMPLES} tweets...')
         clustering = AgglomerativeClustering(
             n_clusters=None,
@@ -78,6 +81,7 @@ def agglomerate(target):
             distance_threshold=DISTANCE_THRESHOLD)
         clustering.fit(vectors)
         
+        # Sort the clusters into lists.
         log('\tFinding centers...')
         cluster_points = [[] for idx in range(len(set(clustering.labels_)))]
         cluster_tweets = [[] for idx in range(len(set(clustering.labels_)))]
@@ -85,19 +89,25 @@ def agglomerate(target):
             cluster_points[label].append(point)
             cluster_tweets[label].append(selection[idx])
 
+        # Sort the lists to find the best ones.
         cluster_points = sorted(cluster_points, key=lambda x: len(x), reverse=True)
         cluster_tweets = sorted(cluster_tweets, key=lambda x: len(x), reverse=True)
 
-        representatives = []
+        # Find the representative tweets with the least distance to the center
+        # of each cluster.
+        reps = []
         try:
             for idx in range(NUM_CLUSTERS):
-                argcenter = find_argcenter(cluster_points[idx])
-                representatives.append(cluster_tweets[idx][argcenter])
+                argcenter, confidence = find_argcenter(cluster_points[idx])
+                reps.append((cluster_tweets[idx][argcenter], confidence))
         except IndexError:
             log(f'WARNING: There were only {len(set(clustering.labels_))} cluster(s)!')
             pass # There were fewer clusters than NUM_CLUSTERS.
         
+        # Display those reps.
         log('\t...done.')
-        for idx in range(len(representatives)):
-            log(f'From a group of similar tweets of size {len(cluster_tweets[idx])}:\n{representatives[idx]}')
+        for idx in range(len(reps)):
+            log(f'Cluster size:\t{len(cluster_tweets[idx])}')
+            log(f'Confidence:\t{reps[idx][1]}')
+            log(f'Tweet:\t{reps[idx][0]}')
         
