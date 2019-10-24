@@ -7,37 +7,26 @@ Analyze trending twitter topics and use NLP to generate a summary
 
 1. Install requirements
         
-        ```
         pip install -r requirements.txt
-        ```
         
 1. Install spaCy requirements (requires administrator privleges)
         
-        ```
         python -m spacy download en
-        ```
         
 1. Create a file called `driver` with your Twitter API secrets, per below.
-        
-        ```
+
         import os
         import zeitgeist
-
         if __name__ == '__main__':
-            
             os.environ['CONSUMER_KEY'] = '<CONSUMER_KEY>'
             os.environ['CONSUMER_SECRET'] = '<CONSUMER_SECRET>'
             os.environ['ACCESS_TOKEN'] = '<ACCESS_TOKEN>'
             os.environ['ACCESS_TOKEN_SECRET'] = '<ACCESS_TOKEN_SECRET>'
-            
             zeitgeist.main()
-        ```
-        
+ 
 1. Run the full program
         
-        ```
         python driver --full
-        ```
         
 ## Goals
 
