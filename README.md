@@ -6,14 +6,19 @@ Analyze trending twitter topics and use NLP to generate a summary
 ## Installation
 
 1. Install requirements
+        
         ```
         pip install -r requirements.txt
         ```
+        
 1. Install spaCy requirements (requires administrator privleges)
+        
         ```
         python -m spacy download en
         ```
-1. Create a file called `driver` with your Twitter API secrets, per below
+        
+1. Create a file called `driver` with your Twitter API secrets, per below.
+        
         ```
         import os
         import zeitgeist
@@ -27,11 +32,13 @@ Analyze trending twitter topics and use NLP to generate a summary
             
             zeitgeist.main()
         ```
+        
 1. Run the full program
+        
         ```
         python driver --full
         ```
-
+        
 ## Goals
 
 - grab corpus from live twitter data (trending hashtags)
