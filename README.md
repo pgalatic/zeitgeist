@@ -62,15 +62,28 @@ python driver --full
     - [x] pgalatic: phase 1 report edited and submitted and add data cleaning if possible
     - [x] tbendlin: plan sentiment analysis portion
     - [x] qxh5696: carryover from 9/19
-- [ ] 10/10
+- [x] 10/10
     - [x] pgalatic: add geolocation data to scraped tweets (coordinates if possible)
     - [x] tbendlin: add overall public opinion of tweets
-    - [ ] qxh5696: hook summarization program into zeitgeist.py and process data
-- [ ] 10/17
+    - [x] qxh5696: hook summarization program into zeitgeist.py and process data
+- [x] 10/17
     - [x] pgalatic: add agglomerative clustering using word vectors and cosine similarity
         - Do we want to add spellchecking for text normalization?
     - [x] tbendlin: add kmeans/density clustering using sentiment
-    - [ ] qxh5696: improve summarization
+    - [x] qxh5696: improve summarization
+- [ ] 10/31
+    - [ ] pgalatic: 
+        - [ ] generate infographic image with tweet information organized in a visually pleasant way
+        - [ ] add random control
+    - [ ] tbendlin:
+        - [ ] report 3 most extreme clusters (most positive, most negative, most neutral)
+        - [ ] also report 3 largest clusters that are not the same as the most extreme clusters
+        - [ ] report semiment value of cluster centers as well as the tweets represented by the center (for color coding)
+        - [ ] add random control
+            - [ ] pick six random tweets and sort by sentiment so that they can "mock" as the centers of the six clusters described above
+    - [ ] qxh5696: add random control
+        - [ ] change summary to be up only M characters (say, 500) for consistency
+        - [ ] add parameter that, when true, will return a summary of random sentences that add up to M characters
     
 ### Data Collection Pipeline
 
