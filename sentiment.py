@@ -170,22 +170,25 @@ def run_k_means(tweets_df, debug):
     sse = []
     clusters = []
 
-    for k in range(K_START, K_END):
-        kmeans_result = KMeans(n_clusters=k, random_state=1).fit(tweets_df)
-        clusters.append(kmeans_result)
+    if debug:
+        for k in range(K_START, K_END):
+            kmeans_result = KMeans(n_clusters=k, random_state=1).fit(tweets_df)
+            clusters.append(kmeans_result)
 
-        if debug:
             sse.append(kmeans_result.inertia_)
             log(f'k = {k}, sse = {kmeans_result.inertia_}')
-    
-    if debug:
+        
         plt.figure()
         plt.plot(np.arange(K_START, K_END), sse)
         plt.xlabel('Number of clusters')
         plt.ylabel('Sum of Squared Errors')
         plt.show()
+        
+        # TODO: Which cluster is actually the best?
+        clusters[BEST_K_IDX]
     
-    return clusters[BEST_K_IDX]
+    else:
+        return KMeans(n_clusters=BEST_K_IDX, random_state=1).fit(tweets_df)
 
 '''
     Runs the DBSCAN algorithm. Separate function for consistency
@@ -266,7 +269,6 @@ def print_clustering_centroids_data(tweets_df, cluster_label, num_clusters, clus
                 min_distance = point_dist
                 center_point = row
 
-        log('Cluster: ', cluster)
         log('Tweet: ', center_point['tweet'])
         log('Compound: ', center_point['compound'])
         log('Positive: ', center_point['pos'])

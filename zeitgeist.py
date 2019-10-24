@@ -32,6 +32,9 @@ def arg_parser():
     # Run full program
     ap.add_argument('--full', action='store_true',
         help='Run full analysis path on current Twitter data [False]')
+    # Run full program on [file] (does not collect new data)
+    ap.add_argument('--process', nargs='?', const=None, default=None,
+        help='Use if data has already been collected, e.g. \'--process=#WednesdayWisdom\'. [None]')
     # Run data collection
     ap.add_argument('--gather', action='store_true',
         help='Gather new data from Twitter [False]')
@@ -46,7 +49,7 @@ def arg_parser():
         help='Summarizes a file, e.g. \'--summarize=#WednesdayWisdom\'. [None]')
     # Run sentiment analysis on [file]
     ap.add_argument('--sentiment', nargs='?', const=None, default=None,
-        help='Performs sentiment analysis on a file, e.g. \'--sentiment=#ImpeachTrump\'. [None]')
+        help='Performs sentiment analysis on a file, e.g. \'--sentiment=#WednesdayWisdom\'. [None]')
         
     ### Arguments modifying behavior
     # Number of topics to analyze.
@@ -70,11 +73,10 @@ def most_recent_file(dir):
     topic_name = os.path.splitext(os.path.basename(most_recent_file))[0]
     return topic_name
 
-def main():
-    parser = arg_parser()
-    args = parser.parse_args()
-
+def gather_data(woeid, num_topics):
+    # We have to validate our Twitter API before we run Gather.
     try:
+        log('Validating Twitter API...')
         auth = tweepy.OAuthHandler(os.environ['CONSUMER_KEY'], os.environ['CONSUMER_SECRET'])
         auth.set_access_token(os.environ['ACCESS_TOKEN'], os.environ['ACCESS_TOKEN_SECRET'])
     except KeyError:
@@ -82,55 +84,82 @@ def main():
         traceback.print_exc()
         sys.exit(-1)
 
-    if args.gather or args.full:
+    log('Gathering data (crtl+C to stop early)...')
+    # Tweepy SHOULD notify us if we're getting rate limited. Often it just
+    # quits, though. If it doesn't quit, then the user can progress to the 
+    # next step via crtl+C.
+    api = tweepy.API(auth,
+        wait_on_rate_limit=True,
+        wait_on_rate_limit_notify=True)
+    # Trending tweets are stored in a CSV file in the /raw/ directory.
+    gather.trending_tweets(api, woeid, num_topics) 
+
+def process(target=None):
+    '''
+    Gathering data takes a long time, so if we want to process an existing 
+    dataset, we can use this function as shorthand.
+    '''
+    if not target: target = most_recent_file(RAW_DIR)
+    partial(**{
+        'purify': target,
+        'cluster': target,
+        'summarize': target,
+        'sentiment': target
+    })
+
+def partial(**kwargs):
+    if kwargs.get('gather'):
         # If we want to gather data (or we're running everything), call the 
         # Twitter API and gather as much as we can.
-        log('Gathering data (crtl+C to stop early)...')
-        # Tweepy SHOULD notify us if we're getting rate limited. Often it just
-        # quits, though. If it doesn't quit, then the user can progress to the 
-        # next step via crtl+C.
-        api = tweepy.API(auth,
-            wait_on_rate_limit=True,
-            wait_on_rate_limit_notify=True)
-        # Trending tweets are stored in a CSV file in the /raw/ directory.
-        gather.trending_tweets(
-            api,
-            woeid=args.woeid,
-            num_topics=args.num_topics)
-    
-    # This may have changed since the last gather.
-    most_recent_topic = most_recent_file(RAW_DIR)
-    if not os.path.exists(REPORT_DIR):
-        os.mkdir(REPORT_DIR)
-    
-    if args.purify or args.full:
+        gather_data(kwargs.get('woeid'), kwargs.get('num_topics'))
+    if kwargs.get('purify'):
         # If we want to clean data (or we're running everything), grab a target
         # and feed it through the data cleaning algorithm. If a target isn't 
         # specified, the most recent file is used.
-        purify_target = args.purify if args.purify else most_recent_topic
-        purify.cleanse(purify_target)
-    if args.cluster or args.full:
+        purify.cleanse(kwargs['purify'])
+    if kwargs.get('cluster'):
         # Same as above, but for clustering.
-        cluster_target = args.cluster if args.cluster else most_recent_topic
-        if not os.path.exists(str(DATA_DIR / cluster_target) + '.csv'):
-            purify.cleanse(cluster_target)
-        cluster.agglomerate(cluster_target)
-    if args.summarize:
-        # Same as above, but for text summarization.
-        summarize_target = args.summarize if args.summarize else most_recent_topic
-        if not os.path.exists(str(DATA_DIR / summarize_target) + '.csv'):
-            purify.cleanse(summarize_target)
-        summary = summarize.summarize_tweets(summarize_target)
-        log(summary)
-    if args.sentiment or args.full:
+        if not os.path.exists(str(DATA_DIR / kwargs['cluster']) + '.csv'):
+            purify.cleanse(kwargs['cluster'])
+        cluster.agglomerate(kwargs['cluster'])
+    if kwargs.get('summarize'):
+        # Same as above, but for text summarization. FIXME: This function seems
+        # to perform so poorly that it can temporarily freeze computers, and is 
+        # deactivated pending investigation.
+        if not os.path.exists(str(DATA_DIR / kwargs['summarize']) + '.csv'):
+            purify.cleanse(kwargs['summarize'])
+        try:
+            summary = summarize.summarize_tweets(kwargs['summarize'])
+            log(summary)
+        except MemoryError:
+            log('WARN: Not enough memory to perform summarization!')
+    if kwargs.get('sentiment'):
         # Same as above, but for sentiment analysis
-        sentiment_target = args.sentiment if args.sentiment else most_recent_topic
-        tweets = sentiment.reduce_to_indv_tweet_text(sentiment_target)
+        tweets = sentiment.reduce_to_indv_tweet_text(kwargs['sentiment'])
         tweets_df = sentiment.get_sentiment_data_frame(tweets)
         sentiment.numerical_sentiment_analysis(tweets_df)
         sentiment.sentiment_clustering(tweets_df)
-    
-    if not (args.full or args.gather or args.purify or args.cluster or args.summarize or args.sentiment):
+
+def main():
+    parser = arg_parser()
+    args = parser.parse_args()
+
+    # If we want to run everything, then run everything.
+    if args.full:
+        gather_data(args.woeid, args.num_topics)
+        process(most_recent_file(RAW_DIR))
+    # If we only want to process a specific target, then generate a report 
+    # without downloading any new data.
+    elif args.process:
+        if args.process == 'last':
+            process()
+        else:
+            process(target=args.process)
+    # If we're doing things a-la-carte, then pass the arguments to partial().
+    elif args.gather or args.purify or args.cluster or args.summarize or args.sentiment:
+        partial(**vars(args))
+    # Otherwise, print a usage statement.
+    else:
         parser.print_help(sys.stdout)
 
 if __name__ == '__main__':
