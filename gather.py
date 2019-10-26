@@ -26,22 +26,37 @@ from extern import *
 # CONSTANTS
 
 
+def already_downloaded():
+    '''
+    Returns the names of files in RAW_DIR, WITHOUT their extensions. Example:
+    
+    raw/
+        #ImpeachTrump.csv
+        #WednesdayWisdom.csv
+    
+    returns: {#ImpeachTrump, #WednesdayWisdom}
+    '''
+    topics = set()
+    for fname in os.listdir(RAW_DIR):
+        topics.add(os.path.splitext(fname)[0])
+    return topics
+
 def trending_tweets(api, woeid, num_topics):
-    
-    # Grabs all trending topics with a known tweet volume.
-    topics = [topic for topic in api.trends_place(woeid)[0]['trends'] if topic['tweet_volume'] != None]
-    
-    # Sort trending topics by their tweet volume. Topics with more tweets are more likely to be
-    # interesting, and more data is always helpful.
-    # top_topics = sorted(topics, key=lambda topic: topic['tweet_volume'], reverse=True)
-    top_topics = topics
     
     # Create the data folder if it doesn't exist.
     if not os.path.isdir(RAW_DIR):
         os.mkdir(RAW_DIR)
     
+    # Grabs all trending topics with a known tweet volume.
+    topics = []
+    redundant = already_downloaded()
+    for trend in api.trends_place(woeid)[0]['trends']:
+        # Ignore any topics that are empty or those that we've already downloaded.
+        if trend['tweet_volume'] != None and trend['name'] not in redundant:
+            topics.append(trend)
+    
     # Process the first N topics.
-    for trend in top_topics[:num_topics]:
+    for trend in topics[:num_topics]:
         
         hashtag = trend['name']
         log(f'Gathering tweets for {hashtag}...')
