@@ -52,6 +52,12 @@ def arg_parser():
         help='Performs sentiment analysis on a file, e.g. \'--sentiment=#WednesdayWisdom\'. [None]')
         
     ### Arguments modifying behavior
+    # Use random seed (or not).
+    ap.add_argument('--seed', type=int, nargs='?', const=None, default=None,
+        help='Seed for initializing random number generator.')
+    # Mock report for purposes of experimental control.
+    ap.add_argument('--mock', action='store_true',
+        help='Mock report, choosing random tweets instead of real ones.')
     # Number of topics to analyze.
     ap.add_argument('--num_topics', nargs='?', type=int, const=1, default=1,
         help='Can only be used when --gather==True. How many datasets should be analyzed? [1]')
@@ -94,7 +100,7 @@ def gather_data(woeid, num_topics):
     # Trending tweets are stored in a CSV file in the /raw/ directory.
     gather.trending_tweets(api, woeid, num_topics) 
 
-def process(target=None):
+def process(target=None, mock=None):
     '''
     Gathering data takes a long time, so if we want to process an existing 
     dataset, we can use this function as shorthand.
@@ -104,7 +110,8 @@ def process(target=None):
         'purify': target,
         'cluster': target,
         'summarize': target,
-        'sentiment': target
+        'sentiment': target,
+        'mock': mock
     })
 
 def partial(**kwargs):
@@ -121,7 +128,7 @@ def partial(**kwargs):
         # Same as above, but for clustering.
         if not os.path.exists(str(DATA_DIR / kwargs['cluster']) + '.csv'):
             purify.cleanse(kwargs['cluster'])
-        cluster.agglomerate(kwargs['cluster'])
+        cluster.agglomerate(kwargs['cluster'], kwargs['mock'])
     if kwargs.get('summarize'):
         # Same as above, but for text summarization. FIXME: This function seems
         # to perform so poorly that it can temporarily freeze computers, and is 
@@ -129,20 +136,22 @@ def partial(**kwargs):
         if not os.path.exists(str(DATA_DIR / kwargs['summarize']) + '.csv'):
             purify.cleanse(kwargs['summarize'])
         try:
-            summary = summarize.summarize_tweets(kwargs['summarize'])
+            summary = summarize.summarize_tweets(kwargs['summarize'], kwargs['mock'])
             log(summary)
         except MemoryError:
             log('WARN: Not enough memory to perform summarization!')
     if kwargs.get('sentiment'):
         # Same as above, but for sentiment analysis
-        tweets = sentiment.reduce_to_indv_tweet_text(kwargs['sentiment'])
-        tweets_df = sentiment.get_sentiment_data_frame(tweets)
-        sentiment.numerical_sentiment_analysis(tweets_df)
-        sentiment.sentiment_clustering(tweets_df)
+        tweets_df = sentiment.get_sentiment_data_frame(kwargs['sentiment'])
+        sentiment.numerical_sentiment_analysis(tweets_df, kwargs['mock'])
+        sentiment.sentiment_clustering(tweets_df, kwargs['mock'])
 
 def main():
     parser = arg_parser()
     args = parser.parse_args()
+    
+    # Set the random number generator seed if one has been provided.
+    if args.seed: np.random.seed(args.seed)
 
     # If we want to run everything, then run everything.
     if args.full:
@@ -152,9 +161,9 @@ def main():
     # without downloading any new data.
     elif args.process:
         if args.process == 'last':
-            process()
+            process(mock=args.mock)
         else:
-            process(target=args.process)
+            process(target=args.process, mock=args.mock)
     # If we're doing things a-la-carte, then pass the arguments to partial().
     elif args.gather or args.purify or args.cluster or args.summarize or args.sentiment:
         partial(**vars(args))

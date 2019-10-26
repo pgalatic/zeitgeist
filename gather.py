@@ -68,7 +68,6 @@ def trending_tweets(api, woeid, num_topics):
             # Search for tweets matching the hashtag.
             total_length = 0
             total_tweets = 0
-            tweet_idx = 0
                         
             # Make a file to store the tweets in.
             fname = str(RAW_DIR / (hashtag + '.csv'))
@@ -89,13 +88,13 @@ def trending_tweets(api, woeid, num_topics):
                 try:
                     for tweet in cursor.items():
                         tweet = tweet._json
-                            
                         # Record the body of the tweets and the timestamp.
                         text = tweet['full_text']
                         timestamp = tweet['created_at']
-                        coords = tweet['coordinates']
+                        fav_count = tweet['favorite_count']
+                        ret_count = tweet['retweet_count']
 
-                        wtr.writerow([timestamp, text, coords])
+                        wtr.writerow([total_tweets, text, timestamp, fav_count, ret_count])
                         
                         total_length += len(text)
                         total_tweets += 1

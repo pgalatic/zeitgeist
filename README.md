@@ -89,9 +89,11 @@ Analyze trending twitter topics and use NLP to generate a summary
 python driver --gather
 ```
 * Data is first gathered from tweets unlceaned with these attributes IN ORDER and placed in a CSV file in ~/raw/:
-    * timestamp
+    * line number
     * text
-    * geolocation
+    * timestamp
+    * number of times favorited
+    * number of times retweeted
 ```
 python driver --purify=[HASHTAG]
 ```

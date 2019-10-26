@@ -63,9 +63,9 @@ def log(*args):
     s = ' '.join([str(arg) for arg in args])
     print(f'[{t}]: {s}')
 
-def sample(target):
-    if SEED: np.random.seed(SEED)
+def sample(target, size=SAMPLE_SIZE):
+    '''Returns a sample of rows from a file in DATA_DIR.'''
     with open(str(DATA_DIR / target) + '.csv.', 'r', newline='', encoding='utf-8') as src:
         rdr = csv.reader(src)
-        raw_data = [row[1] for row in rdr]
-        return np.random.choice(raw_data, SAMPLE_SIZE)
+        raw = np.array([row for row in rdr])
+        return raw[np.random.choice(raw.shape[0], size), :]
