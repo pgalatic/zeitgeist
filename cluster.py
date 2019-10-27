@@ -49,7 +49,7 @@ def find_argcenter(cluster):
             closest = idx
     return idx, 1 - least_dist
 
-def find_cluster_reps(samp, corpus): 
+def agglomerate(samp, corpus): 
     if not os.path.isdir(CACHE_DIR):
         os.mkdir(CACHE_DIR)
 
@@ -93,7 +93,7 @@ def find_cluster_reps(samp, corpus):
     
     return reps
     
-def agglomerate(target, mock):
+def find_cluster_reps(target, mock):
     log(f'Clustering {target}...')
     
     # Checking spelling can help normalize text.
@@ -118,12 +118,8 @@ def agglomerate(target, mock):
         reps = sorted(reps, key=lambda x: x[0], reverse=True)
     # Otherwise, find reps "the hard way" using clustering.
     else:
-        reps = find_cluster_reps(samp, corpus)
-
-    # Display those reps.
-    log('\t...done.')
-    for idx in range(len(reps)):
-        log(f'Cluster size:\t{reps[idx][0]}')
-        log(f'Confidence:\t{round(reps[idx][1], 2)}')
-        log(f'Tweet:\t{reps[idx][2][1]}')
+        reps = agglomerate(samp, corpus)
+    
+    log('...done.')
+    return reps
         

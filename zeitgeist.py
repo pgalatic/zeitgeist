@@ -124,27 +124,34 @@ def partial(**kwargs):
         # and feed it through the data cleaning algorithm. If a target isn't 
         # specified, the most recent file is used.
         purify.cleanse(kwargs['purify'])
-    if kwargs.get('cluster'):
-        # Same as above, but for clustering.
-        if not os.path.exists(str(DATA_DIR / kwargs['cluster']) + '.csv'):
-            purify.cleanse(kwargs['cluster'])
-        cluster.agglomerate(kwargs['cluster'], kwargs['mock'])
     if kwargs.get('summarize'):
-        # Same as above, but for text summarization. FIXME: This function seems
-        # to perform so poorly that it can temporarily freeze computers, and is 
-        # deactivated pending investigation.
+        # Same as above, but for text summarization.
         if not os.path.exists(str(DATA_DIR / kwargs['summarize']) + '.csv'):
             purify.cleanse(kwargs['summarize'])
         try:
             summary = summarize.summarize_tweets(kwargs['summarize'], kwargs['mock'])
+            # TODO: ADD SUMMARY TO REPORT HERE
             log(summary)
         except MemoryError:
             log('WARN: Not enough memory to perform summarization!')
+    if kwargs.get('cluster'):
+        # Find representative tweets using agglomerative clustering. 
+        if not os.path.exists(str(DATA_DIR / kwargs['cluster']) + '.csv'):
+            purify.cleanse(kwargs['cluster'])
+        reps = cluster.find_cluster_reps(kwargs['cluster'], kwargs['mock'])
+        # TODO: ADD REPS TO REPORT HERE
+        for idx in range(len(reps)):
+            log(f'Cluster size:\t{reps[idx][0]}')
+            log(f'Confidence:\t{round(reps[idx][1], 2)}')
+            log(f'Tweet:\t{reps[idx][2][1]}')
     if kwargs.get('sentiment'):
         # Same as above, but for sentiment analysis
         tweets_df = sentiment.get_sentiment_data_frame(kwargs['sentiment'])
+        # TODO: TBENDLIN -- PACKAGE YOUR RETURN DATA SO THAT IT CAN BE ADDED
+        #     TO THE REPORT HERE, IN ZEITGEIST.PY. THANKS!
         sentiment.numerical_sentiment_analysis(tweets_df, kwargs['mock'])
         sentiment.sentiment_clustering(tweets_df, kwargs['mock'])
+        # TODO: ADD SENTIMENT TO REPORT HERE
 
 def main():
     parser = arg_parser()
