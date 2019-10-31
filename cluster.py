@@ -86,7 +86,7 @@ def agglomerate(samp, corpus):
     try:
         for idx in range(NUM_CLUSTERS):
             argcenter, confidence = find_argcenter(cluster_points[idx])
-            reps.append((len(cluster_tweets[idx]), confidence, cluster_tweets[idx][argcenter]))
+            reps.append([len(cluster_tweets[idx]), confidence, cluster_tweets[idx][argcenter]])
     except IndexError:
         log(f'WARNING: There were only {len(set(clustering.labels_))} cluster(s)!')
         pass # There were fewer clusters than NUM_CLUSTERS.
@@ -104,7 +104,7 @@ def find_cluster_reps(target, mock):
     # are presented.
     log('\tReading in data...')
     samp = sample(target)
-    corpus = [filter(row[1], speller) for row in samp]
+    corpus = [filter(row['text'], speller) for row in samp]
     
     # If we're mocking the data, it's very easy. Just return random tweets from
     # the corpus.

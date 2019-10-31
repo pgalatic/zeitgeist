@@ -72,7 +72,8 @@ Analyze trending twitter topics and use NLP to generate a summary
 - [ ] 10/31
     - [ ] pgalatic: 
         - [ ] generate infographic image with tweet information organized in a visually pleasant way
-        - [ ] add random control
+        - [ ] add function for transforming old datasets into new format
+        - [x] add random control
     - [ ] tbendlin:
         - [ ] report 3 most extreme clusters (most positive, most negative, most neutral)
         - [ ] also report 3 largest clusters that are not the same as the most extreme clusters
@@ -82,6 +83,8 @@ Analyze trending twitter topics and use NLP to generate a summary
     - [ ] qxh5696: add random control
         - [ ] change summary to be up only M characters (say, 500) for consistency
         - [ ] add parameter that, when true, will return a summary of random sentences that add up to M characters
+- [ ] 11/7
+    - [ ] Carryover from last week
 
 ### Data Collection Pipeline
 

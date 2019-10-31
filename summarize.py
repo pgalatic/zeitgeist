@@ -105,7 +105,7 @@ def summarize_tweets(target, mock):
     '''Summarizes tweets passed in from zeitgeist'''
     selection = sample(target)
     log(f'Summarizing {len(selection)} tweets from {target}...')
-    corpus = ' '.join([row[1] for row in selection])
+    corpus = ' '.join([row['text'] for row in selection])
     summary = core_summary_function(corpus, is_twitter_corpus=True)
     return summary
 

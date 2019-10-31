@@ -59,7 +59,7 @@ def reduce_to_indv_tweet_text(target, mock):
     @returns (Dataframe) pandas dataframe of tweets and sentiment values
 '''
 def get_sentiment_data_frame(target):
-    tweets = [row[1] for row in sample(target)]
+    tweets = [row['text'] for row in sample(target)]
 
     tweets_map = {
         'tweet': [],

@@ -9,6 +9,7 @@
 # STD LIB
 import os
 import csv
+import pdb
 import time
 import pathlib
 
@@ -22,6 +23,7 @@ SEED = None
 
 RAW_DIR = pathlib.Path('raw/')
 DATA_DIR = pathlib.Path('data/')
+BRAND_DIR = pathlib.Path('brand/')
 CACHE_DIR = pathlib.Path('cache/')
 REPORT_DIR = pathlib.Path('report/')
 
@@ -34,8 +36,15 @@ if not os.path.exists(CACHE_DIR):
 if not os.path.exists(REPORT_DIR):
     os.mkdir(REPORT_DIR)
 
+# Constants for zeitgeist.py
+BACKGROUND = str(BRAND_DIR / 'BACKGROUND.png')
+FONT_NORM = str(BRAND_DIR / 'HelveticaNeue.ttf')
+FONT_BOLD = str(BRAND_DIR / 'helvetica-neue-bold.ttf')
+FONT_ROMAN = str(BRAND_DIR / 'helveticaneue-roman.ttf')
+
 # Constants for gather.py
 GATHER_FILTER = ' -filter:retweets'
+GATHER_FIELDNAMES = ['index', 'text', 'timestamp', 'fav_count', 'ret_count', 'username', 'at_tag', 'id']
 GATHER_MAX_TWEETS = 10 ** 9
 GATHER_MAX_CHARS = 10 ** 9
 
@@ -66,6 +75,6 @@ def log(*args):
 def sample(target, size=SAMPLE_SIZE):
     '''Returns a sample of rows from a file in DATA_DIR.'''
     with open(str(DATA_DIR / target) + '.csv.', 'r', newline='', encoding='utf-8') as src:
-        rdr = csv.reader(src)
+        rdr = csv.DictReader(src)
         raw = np.array([row for row in rdr])
-        return raw[np.random.choice(raw.shape[0], size), :]
+        return raw[np.random.choice(raw.shape[0], size)]

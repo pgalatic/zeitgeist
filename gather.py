@@ -38,7 +38,7 @@ def already_downloaded():
     '''
     topics = set()
     for fname in os.listdir(RAW_DIR):
-        topics.add(os.path.splitext(fname)[0])
+        topics.add(' '.join(os.path.splitext(fname)[0].split('_')))
     return topics
 
 def trending_tweets(api, woeid, num_topics):
@@ -51,60 +51,69 @@ def trending_tweets(api, woeid, num_topics):
     topics = []
     redundant = already_downloaded()
     for trend in api.trends_place(woeid)[0]['trends']:
-        # Ignore any topics that are empty or those that we've already downloaded.
-        if trend['tweet_volume'] != None and trend['name'] not in redundant:
+        # Ignore any topics that are empty, those that do not have at least one 
+        # character from the alphabet in their name, or those that we have 
+        # already downloaded.
+        if (
+            trend['tweet_volume'] != None and 
+            re.search('[a-zA-Z]', trend['name']) and
+            trend['name'] not in redundant
+        ):
             topics.append(trend)
     
     # Process the first N topics.
     for trend in topics[:num_topics]:
         
         hashtag = trend['name']
-        log(f'Gathering tweets for {hashtag}...')
+        proper_name = '_'.join(hashtag.split(' '))
+        log(f'Gathering tweets for {proper_name}...')
         
-        # Only consider trends with at least one English letter, for now.
-        # This introduces bias but makes results more interpretable.
-        if re.search('[a-zA-Z]', hashtag):
+        # Search for tweets matching the hashtag.
+        total_length = 0
+        total_tweets = 0
+                    
+        # Make a file to store the tweets in.
+        fname = str(RAW_DIR / (proper_name + '.csv'))
+        with open(fname, 'w+', newline='', encoding='utf-8') as topicfile:
         
-            # Search for tweets matching the hashtag.
-            total_length = 0
-            total_tweets = 0
-                        
-            # Make a file to store the tweets in.
-            fname = str(RAW_DIR / (hashtag + '.csv'))
-            with open(fname, 'w+', newline='', encoding='utf-8') as topicfile:
+            # Use a cursor to find tweets and a csv writer to record them.
+            # Retweets would lead to data duplication, so those are skipped.
+            wtr = csv.DictWriter(topicfile, fieldnames=GATHER_FIELDNAMES)
+            wtr.writeheader()
+            cursor = tweepy.Cursor(
+                api.search, 
+                q=hashtag + GATHER_FILTER,
+                count=100,
+                lang='en',
+                since=datetime.strftime(datetime.now() - timedelta(1), '%Y-%m-%d'),
+                tweet_mode='extended'
+            )
             
-                # Use a cursor to find tweets and a csv writer to record them.
-                # Retweets would lead to data duplication, so those are skipped.
-                wtr = csv.writer(topicfile)
-                cursor = tweepy.Cursor(
-                    api.search, 
-                    q=hashtag + GATHER_FILTER,
-                    count=100,
-                    lang='en',
-                    since=datetime.strftime(datetime.now() - timedelta(1), '%Y-%m-%d'),
-                    tweet_mode='extended'
-                )
-                
-                try:
-                    for tweet in cursor.items():
-                        tweet = tweet._json
-                        # Record the body of the tweets and the timestamp.
-                        text = tweet['full_text']
-                        timestamp = tweet['created_at']
-                        fav_count = tweet['favorite_count']
-                        ret_count = tweet['retweet_count']
+            try:
+                for tweet in cursor.items():
+                    tweet = tweet._json
+                    # Record the body of the tweets and the timestamp.
 
-                        wtr.writerow([total_tweets, text, timestamp, fav_count, ret_count])
-                        
-                        total_length += len(text)
-                        total_tweets += 1
-                        
-                        if total_length > GATHER_MAX_CHARS or total_tweets > GATHER_MAX_TWEETS:
-                            log('...Quota met.')
-                            break
-                except KeyboardInterrupt:
-                    pass
+                    wtr.writerow({
+                        'index': total_tweets, 
+                        'text': tweet['full_text'],
+                        'timestamp': tweet['created_at'], 
+                        'fav_count': tweet['favorite_count'], 
+                        'ret_count': tweet['retweet_count'],
+                        'username': tweet['user']['name'], 
+                        'at_tag': tweet['user']['screen_name'], 
+                        'id': tweet['id']
+                    })
+                    
+                    total_length += len(tweet['full_text'])
+                    total_tweets += 1
+                    
+                    if total_length > GATHER_MAX_CHARS or total_tweets > GATHER_MAX_TWEETS:
+                        log('...Quota met.')
+                        break
+            except KeyboardInterrupt:
+                pass
     
-        log(f'stats for {hashtag}')
+        log(f'stats for {proper_name}')
         log(f'\ttotal_length:\t{total_length}')
         log(f'\ttotal_tweets:\t{total_tweets}')
