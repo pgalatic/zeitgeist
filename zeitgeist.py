@@ -112,13 +112,12 @@ def deref(tweets, target):
     corresponding text from the same tweet in RAW_DIR.
     '''
     tweets = sorted(tweets, key=lambda x: int(x['index']))
-    log(tweets)
     with open(str(RAW_DIR / target) + '.csv', 'r', newline='', encoding='utf-8') as raw:
         rdr = csv.DictReader(raw)
         rows = [row for row in rdr]
         
         for idx in range(len(tweets)):
-            tweets[idx]['text'] = rows[idx]['text']
+            tweets[idx]['text'] = rows[int(tweets[idx]['index'])]['text']
     log(tweets)
 
 def report(target, summary, cluster_reps, sent_reps, seed=None, label=None):
