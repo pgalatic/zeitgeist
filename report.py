@@ -96,7 +96,7 @@ def create(target, summary, cluster_reps, sent_reps, seed=None, label=None):
     draw.text(title_loc, '\n' + target, fill=(0, 0, 0), font=BIG_FNT, align='center')
     
     summary_img = ImageText(summary_size, background=WHITE)
-    summary_img.write_text_box((0, 0), summary, box_width=width, font_filename=FONT_BOLD, font_size=96, place='justify')
+    summary_img.write_text_box((0, 0), summary, font_filename=FONT_BOLD, font_size=96)
     
     img.paste(summary_img.image, summary_loc)
     #img.paste(cluster_box(cluster_reps[0]))
