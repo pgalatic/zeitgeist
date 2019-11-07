@@ -55,7 +55,6 @@ def trending_tweets(api, woeid, num_topics):
         # character from the alphabet in their name, or those that we have 
         # already downloaded.
         if (
-            trend['tweet_volume'] != None and 
             re.search('[a-zA-Z]', trend['name']) and
             trend['name'] not in redundant
         ):
