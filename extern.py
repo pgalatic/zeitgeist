@@ -18,7 +18,7 @@ import numpy as np
 
 # CONSTANTS
 TIME_FORMAT = '%H:%M:%S'
-SAMPLE_SIZE = 2048
+SAMPLE_SIZE = 64
 SEED = None
 
 RAW_DIR = pathlib.Path('raw/')
@@ -36,7 +36,10 @@ if not os.path.exists(CACHE_DIR):
 if not os.path.exists(REPORT_DIR):
     os.mkdir(REPORT_DIR)
 
-# Constants for zeitgeist.py
+# Constants for report.py
+BORDER = 40
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
 BACKGROUND = str(BRAND_DIR / 'BACKGROUND.png')
 FONT_NORM = str(BRAND_DIR / 'HelveticaNeue.ttf')
 FONT_BOLD = str(BRAND_DIR / 'helvetica-neue-bold.ttf')

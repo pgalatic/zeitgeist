@@ -60,6 +60,9 @@ def trending_tweets(api, woeid, num_topics):
         ):
             topics.append(trend)
     
+    if len(topics) < 1:
+        log(f'WARN: There are {len(topics)} topics.')
+    
     # Process the first N topics.
     for trend in topics[:num_topics]:
         
