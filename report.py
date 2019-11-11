@@ -17,7 +17,7 @@ import tweepy
 from PIL import Image, ImageDraw, ImageFont
 
 # PROJECT LIB
-from text2 import ImageText
+from text import ImageText
 from extern import *
 
 TNY_FNT = ImageFont.truetype(FONT_BOLD, 10)
