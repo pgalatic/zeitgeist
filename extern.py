@@ -36,13 +36,21 @@ if not os.path.exists(REPORT_DIR):
     os.mkdir(REPORT_DIR)
 
 # Constants for report.py
-BORDER = 50
+BORDER = 3
+BUFFER = 50
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
+ICON = str(BRAND_DIR / 'ICON.png')
+COMMENT = str(BRAND_DIR / 'COMMENT.png')
+RETWEET = str(BRAND_DIR / 'RETWEET.png')
+LIKE = str(BRAND_DIR / 'LIKE.png')
+MAIL = str(BRAND_DIR / 'MAIL.png')
 BACKGROUND = str(BRAND_DIR / 'BACKGROUND.png')
 FONT_NORM = str(BRAND_DIR / 'HelveticaNeue.ttf')
 FONT_BOLD = str(BRAND_DIR / 'helvetica-neue-bold.ttf')
 FONT_ROMAN = str(BRAND_DIR / 'helveticaneue-roman.ttf')
+TIME_FORMAT = '%a %b %d %H:%M:%S %z %Y'
+OUT_FORMAT = '%-d %b %Y'
 
 # Constants for gather.py
 GATHER_FILTER = ' -filter:retweets'

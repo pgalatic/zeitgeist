@@ -11,10 +11,11 @@ import os
 import pdb
 import sys
 import textwrap
+from datetime import datetime
 
 # EXTERNAL LIB
 import tweepy
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 # PROJECT LIB
 from text import ImageText
@@ -24,11 +25,53 @@ SML_FNT = ImageFont.truetype(FONT_BOLD, 32)
 MED_FNT = ImageFont.truetype(FONT_BOLD, 64)
 BIG_FNT = ImageFont.truetype(FONT_BOLD, 128)
 
+def time_string(timestamp):
+    dt = datetime.strptime(timestamp, TIME_FORMAT)
+    return dt.strftime(dt, OUT_FORMAT)
+
+def icon_text(icon, text, spacing):
+    text_size = SML_FONT.getsize(text)
+    total_size = (icon.size[0] + text_size[0] + spacing, max(icon.size[1], text_size[1]))
+    text_loc = (icon.size[0] + spacing, icon.size[1])
+    img = Image.new('RGB', total_size, color=WHITE)
+    img.paste(icon, (0, 0))
+    ImageDraw(img).draw(text_loc, text, fill=BLACK, font=SML_FONT)
+    return img
+
+def bottom_bar(width, height, comments, retweets, likes, date):
+    spacing = BUFFER // 4
+    icon_comment = Image.open(COMMENT).thumbnail((height, height))
+    icon_retweet = Image.open(RETWEET).thumbnail((height, height))
+    icon_like = Image.open(LIKE).thumbnail((height, height))
+    icon_mail = Image.open(MAIL).thumbnail((height, height))
+    
+    img_comment = icon_text(icon_comment, comments, spacing)
+    img_retweet = icon_text(icon_retweet, retweets, spacing)
+    img_like = icon_text(icon_like, likes, spacing)
+    
+    comment_loc = (spacing, 0)
+    retweet_loc = (spacing * 2 + img_comment.size[0], 0)
+    like_loc = (spacing * 3 + img_comment.size[0] + img_retweet.size[0], 0)
+    mail_loc = (spacing * 4 + img_comment.size[0] + img_retweet.size[0] + img_like.size[0])
+    
+    bar = Image.new('RGB', size=(width, height), color=WHITE)
+    bar.paste(img_comment, comment_loc)
+    bar.paste(img_retweet, retweet_loc)
+    bar.paste(img_like, like_loc)
+    bar.paste(icon_mail, mail_loc)
+    
+    draw = ImageDraw(bar)
+    date_size = SML_FONT.getsize(date)
+    date_loc = (width - (spacing + date_size[0]), 0)
+    draw.text(date_loc, date, fill=BLACK, font=SML_FONT)
+    
+    return bar
+
 def box(text, box_size):
-    border_size = (box_size[0] - BORDER, box_size[1] - BORDER)
-    img = ImageText(border_size, background=WHITE).write_text_box(text, font_filename=FONT_BOLD)
+    BUFFER_size = (box_size[0] - BUFFER, box_size[1] - BUFFER)
+    img = ImageText(BUFFER_size, background=WHITE).write_text_box(text, font_filename=FONT_BOLD)
     background = Image.new('RGB', box_size, color=WHITE)
-    background.paste(img, (BORDER, BORDER))
+    background.paste(img, (BUFFER // 2, BUFFER // 2))
 
     return background
     
@@ -37,23 +80,32 @@ def cluster_box(rep, size):
     confidence = rep[1]
     text = rep[2]['text']
     username = rep[2]['username']
+    timestamp = time_string(rep[2]['timestamp'])
     at_tag = '@' + rep[2]['at_tag']
+    comments = '0' # TODO: Is this in the Twitter search API?
     
-    base_size = (size[0] - BORDER, size[1] - BORDER)
+    if username == '': username = 'Unknown'
+    if at_tag == '@': at_tag = '@unknown'
     
+    base_size = (size[0] - BUFFER, size[1] - BUFFER * 4)
+    avatar_size = (64, 64)
+    icon = Image.open(ICON).thumbnail(avatar_size)
+    bar = 
     base = box(text, base_size)
-    base_loc = (BORDER, BORDER)
-    avatar_loc = ((10, 10), (64, 64))
-    username_loc = (100, 10)
-    at_tag_loc = (100, 50)
-    font = ImageFont.truetype(FONT_BOLD, 32)
-
-    img = Image.new('RGB', size=size, color=WHITE)
+    
+    base_loc = (BUFFER, BUFFER)
+    avatar_loc = ((10, 10), (10 + avatar_size[0], 10 + avatar_size[1]))
+    username_loc = (100, 12)
+    at_tag_loc = (100, 48)
+    icon_loc = (width - (10 + avatar_size[0]), height - 10)
+    
+    img = ImageOps.expand(Image.new('RGB', size=size, color=WHITE), border=BORDER, fill=BLACK)
     img.paste(base, base_loc)
+    img.paste(icon, icon_loc)
     draw = ImageDraw.Draw(img)
     draw.ellipse(avatar_loc, fill='black')
-    draw.text(username_loc, username, fill=BLACK, font=font)
-    draw.text(at_tag_loc, at_tag, fill=BLACK, font=font)
+    draw.text(username_loc, username, fill=BLACK, font=SML_FONT)
+    draw.text(at_tag_loc, at_tag, fill=BLACK, font=SML_FONT)
 
     return img
 
@@ -72,23 +124,23 @@ def create(target, summary, cluster_reps, sent_reps, seed=None, label=None):
     label_loc =     (int(width * 0.80), int(height * 0.10))
     seed_loc =      (int(width * 0.10), int(height * 0.10))
     title_loc =     (int(width * 0.30), int(height * 0.10))
-    summary_loc =   (int(width * 0.05), int(height * 0.20))
-    cluster_0_loc = (int(width * 0.05), int(height * 0.45))
-    cluster_1_loc = (int(width * 0.35), int(height * 0.45))
-    cluster_2_loc = (int(width * 0.65), int(height * 0.45))
-    sent_0_loc =    (int(width * 0.05), int(height * 0.65))
-    sent_1_loc =    (int(width * 0.35), int(height * 0.65))
-    sent_2_loc =    (int(width * 0.65), int(height * 0.65))
-    sent_3_loc =    (int(width * 0.05), int(height * 0.85))
-    sent_4_loc =    (int(width * 0.35), int(height * 0.85))
-    sent_5_loc =    (int(width * 0.65), int(height * 0.85))
+    summary_loc =   (int(width * 0.02), int(height * 0.20))
+    cluster_0_loc = (int(width * 0.02), int(height * 0.45))
+    cluster_1_loc = (int(width * 0.33), int(height * 0.45))
+    cluster_2_loc = (int(width * 0.64), int(height * 0.45))
+    sent_0_loc =    (int(width * 0.02), int(height * 0.65))
+    sent_1_loc =    (int(width * 0.33), int(height * 0.65))
+    sent_2_loc =    (int(width * 0.64), int(height * 0.65))
+    sent_3_loc =    (int(width * 0.02), int(height * 0.85))
+    sent_4_loc =    (int(width * 0.33), int(height * 0.85))
+    sent_5_loc =    (int(width * 0.64), int(height * 0.85))
     
     summary_size = (width - summary_loc[0] * 2, cluster_0_loc[1] - summary_loc[1])
-    summary_size = (summary_size[0] - BORDER, summary_size[1] - BORDER)
+    summary_size = (summary_size[0] - BUFFER, summary_size[1] - BUFFER)
     cluster_size = (cluster_1_loc[0] - cluster_0_loc[0], sent_0_loc[1] - cluster_0_loc[1])
-    cluster_size = (cluster_size[0] - BORDER, cluster_size[1] - BORDER)
+    cluster_size = (cluster_size[0] - BUFFER, cluster_size[1] - BUFFER)
     sent_size = (sent_1_loc[0] - sent_0_loc[0], height - sent_0_loc[1])
-    sent_size = (sent_size[0] - BORDER, sent_size[1] - BORDER)
+    sent_size = (sent_size[0] - BUFFER, sent_size[1] - BUFFER)
     
     cluster_text = ['\n'.join(textwrap.wrap(rep[2]['text'], width=32)) for rep in cluster_reps]
     sent_text = ['\n'.join(textwrap.wrap(rep, width=32)) for rep in sent_reps]
@@ -98,7 +150,7 @@ def create(target, summary, cluster_reps, sent_reps, seed=None, label=None):
     if seed: draw.text(seed_loc, f'seed={seed}', fill=(0, 0, 0), font=SML_FNT)
     draw.text(title_loc, '\n' + target, fill=(0, 0, 0), font=BIG_FNT, align='center')
     
-    summary_img = box(summary, summary_size)
+    summary_img = ImageOps.expand(box(summary, summary_size), border=BORDER, fill=BLACK)
     
     img.paste(summary_img, summary_loc)
     img.paste(cluster_box(cluster_reps[0], cluster_size), cluster_0_loc)

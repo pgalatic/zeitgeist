@@ -83,16 +83,16 @@ def agglomerate(samp, corpus):
     # Find the representative tweets with the least distance to the center
     # of each cluster.
     reps = []
-    try:
-        for idx in range(NUM_CLUSTERS):
+    for idx in range(NUM_CLUSTERS):
+        try:
             argcenter, confidence = find_argcenter(cluster_points[idx])
             reps.append([len(cluster_tweets[idx]), confidence, cluster_tweets[idx][argcenter]])
-    except IndexError:
-        log(f'WARNING: There were only {len(set(clustering.labels_))} cluster(s)!')
-        # Act as if there were more than two clusters by picking the first 
-        # tweet(s). This only happens if there are very few tweets in a sample,
-        # usually during testing.
-        reps.append([1, 0, samp[idx]])
+        except IndexError:
+            log(f'WARNING: There were only {len(set(clustering.labels_))} cluster(s)!')
+            # Act as if there were more than two clusters by picking the first 
+            # tweet(s). This only happens if there are very few tweets in a sample,
+            # usually during testing.
+            reps.append([1, 0, samp[idx]])
     
     return reps
     
