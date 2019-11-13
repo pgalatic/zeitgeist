@@ -17,8 +17,8 @@ import pathlib
 import numpy as np
 
 # CONSTANTS
-TIME_FORMAT = '%H:%M:%S'
-SAMPLE_SIZE = 64
+LOGTIME_FORMAT = '%H:%M:%S'
+SAMPLE_SIZE = 2048
 
 RAW_DIR = pathlib.Path('raw/')
 DATA_DIR = pathlib.Path('data/')
@@ -38,9 +38,10 @@ if not os.path.exists(REPORT_DIR):
 # Constants for report.py
 BORDER = 3
 BUFFER = 50
+SPACING = BUFFER // 4
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
-ICON = str(BRAND_DIR / 'ICON.png')
+ICON = str(BRAND_DIR / 'LOGO.png')
 COMMENT = str(BRAND_DIR / 'COMMENT.png')
 RETWEET = str(BRAND_DIR / 'RETWEET.png')
 LIKE = str(BRAND_DIR / 'LIKE.png')
@@ -50,7 +51,7 @@ FONT_NORM = str(BRAND_DIR / 'HelveticaNeue.ttf')
 FONT_BOLD = str(BRAND_DIR / 'helvetica-neue-bold.ttf')
 FONT_ROMAN = str(BRAND_DIR / 'helveticaneue-roman.ttf')
 TIME_FORMAT = '%a %b %d %H:%M:%S %z %Y'
-OUT_FORMAT = '%-d %b %Y'
+OUT_FORMAT = '%d %b %Y'
 
 # Constants for gather.py
 GATHER_FILTER = ' -filter:retweets'
@@ -78,7 +79,7 @@ MAX_PRINTED_CLUSTSERS = 5
 
 def log(*args):
     '''More informative print debugging'''
-    t = time.strftime(TIME_FORMAT, time.localtime())
+    t = time.strftime(LOGTIME_FORMAT, time.localtime())
     s = '\t'.join([str(arg) for arg in args])
     print(f'[{t}]: {s}')
 

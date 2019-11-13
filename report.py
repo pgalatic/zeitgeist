@@ -27,32 +27,38 @@ BIG_FNT = ImageFont.truetype(FONT_BOLD, 128)
 
 def time_string(timestamp):
     dt = datetime.strptime(timestamp, TIME_FORMAT)
-    return dt.strftime(dt, OUT_FORMAT)
+    return dt.strftime(OUT_FORMAT)
 
-def icon_text(icon, text, spacing):
-    text_size = SML_FONT.getsize(text)
-    total_size = (icon.size[0] + text_size[0] + spacing, max(icon.size[1], text_size[1]))
-    text_loc = (icon.size[0] + spacing, icon.size[1])
+def icon_text(icon, text):
+    text_size = SML_FNT.getsize(text)
+    total_size = (icon.size[0] + text_size[0] + SPACING, max(icon.size[1], text_size[1]))
+    text_loc = (icon.size[0] + SPACING // 2, 0)
     img = Image.new('RGB', total_size, color=WHITE)
     img.paste(icon, (0, 0))
-    ImageDraw(img).draw(text_loc, text, fill=BLACK, font=SML_FONT)
+    draw = ImageDraw.Draw(img)
+    draw.text(text_loc, text, fill=BLACK, font=SML_FNT)
     return img
 
-def bottom_bar(width, height, comments, retweets, likes, date):
-    spacing = BUFFER // 4
-    icon_comment = Image.open(COMMENT).thumbnail((height, height))
-    icon_retweet = Image.open(RETWEET).thumbnail((height, height))
-    icon_like = Image.open(LIKE).thumbnail((height, height))
-    icon_mail = Image.open(MAIL).thumbnail((height, height))
+def bottom_bar(size, comments, retweets, likes, date):
+    width, height = size
     
-    img_comment = icon_text(icon_comment, comments, spacing)
-    img_retweet = icon_text(icon_retweet, retweets, spacing)
-    img_like = icon_text(icon_like, likes, spacing)
+    icon_comment = Image.open(COMMENT)
+    icon_comment.thumbnail((height, height))
+    icon_retweet = Image.open(RETWEET)
+    icon_retweet.thumbnail((height, height))
+    icon_like = Image.open(LIKE)
+    icon_like.thumbnail((height, height))
+    icon_mail = Image.open(MAIL)
+    icon_mail.thumbnail((height, height))
     
-    comment_loc = (spacing, 0)
-    retweet_loc = (spacing * 2 + img_comment.size[0], 0)
-    like_loc = (spacing * 3 + img_comment.size[0] + img_retweet.size[0], 0)
-    mail_loc = (spacing * 4 + img_comment.size[0] + img_retweet.size[0] + img_like.size[0])
+    img_comment = icon_text(icon_comment, comments)
+    img_retweet = icon_text(icon_retweet, retweets)
+    img_like = icon_text(icon_like, likes)
+    
+    comment_loc = (SPACING, 0)
+    retweet_loc = (SPACING*4 + img_comment.size[0], 0)
+    like_loc = (SPACING*7 + img_comment.size[0] + img_retweet.size[0], 0)
+    mail_loc = (SPACING*9 + img_comment.size[0] + img_retweet.size[0] + img_like.size[0], 0)
     
     bar = Image.new('RGB', size=(width, height), color=WHITE)
     bar.paste(img_comment, comment_loc)
@@ -60,10 +66,10 @@ def bottom_bar(width, height, comments, retweets, likes, date):
     bar.paste(img_like, like_loc)
     bar.paste(icon_mail, mail_loc)
     
-    draw = ImageDraw(bar)
-    date_size = SML_FONT.getsize(date)
-    date_loc = (width - (spacing + date_size[0]), 0)
-    draw.text(date_loc, date, fill=BLACK, font=SML_FONT)
+    draw = ImageDraw.Draw(bar)
+    date_size = SML_FNT.getsize(date)
+    date_loc = (width - (SPACING + date_size[0]), 0)
+    draw.text(date_loc, date, fill=BLACK, font=SML_FNT)
     
     return bar
 
@@ -80,32 +86,42 @@ def cluster_box(rep, size):
     confidence = rep[1]
     text = rep[2]['text']
     username = rep[2]['username']
-    timestamp = time_string(rep[2]['timestamp'])
     at_tag = '@' + rep[2]['at_tag']
-    comments = '0' # TODO: Is this in the Twitter search API?
+    comments = '' # TODO: Is this in the Twitter search API?
+    retweets = rep[2]['ret_count']
+    likes = rep[2]['fav_count']
+    date = time_string(rep[2]['timestamp'])
     
     if username == '': username = 'Unknown'
     if at_tag == '@': at_tag = '@unknown'
+    if comments == '': comments = '0'
+    if retweets == '': retweets = '0'
+    if likes == '': likes = '0'
     
     base_size = (size[0] - BUFFER, size[1] - BUFFER * 4)
-    avatar_size = (64, 64)
-    icon = Image.open(ICON).thumbnail(avatar_size)
-    bar = 
-    base = box(text, base_size)
+    bar_size = (size[0] - BUFFER, BUFFER)
+    avatar_size = (80, 80)
     
-    base_loc = (BUFFER, BUFFER)
-    avatar_loc = ((10, 10), (10 + avatar_size[0], 10 + avatar_size[1]))
-    username_loc = (100, 12)
-    at_tag_loc = (100, 48)
-    icon_loc = (width - (10 + avatar_size[0]), height - 10)
+    base = box(text, base_size)
+    bar = bottom_bar(bar_size, comments, retweets, likes, date)
+    icon = Image.open(ICON)
+    icon.thumbnail(avatar_size)
+        
+    base_loc = (BUFFER, BUFFER * 2)
+    bar_loc = (SPACING, size[1] - (bar.size[1] + SPACING))
+    avatar_loc = ((SPACING, SPACING), (SPACING + avatar_size[0], SPACING + avatar_size[1]))
+    username_loc = (100, SPACING)
+    at_tag_loc = (100, SPACING * 2 + SML_FNT.getsize(username)[1])
+    icon_loc = (size[0] - (SPACING + avatar_size[0]), SPACING)
     
     img = ImageOps.expand(Image.new('RGB', size=size, color=WHITE), border=BORDER, fill=BLACK)
     img.paste(base, base_loc)
     img.paste(icon, icon_loc)
+    img.paste(bar, bar_loc)
     draw = ImageDraw.Draw(img)
     draw.ellipse(avatar_loc, fill='black')
-    draw.text(username_loc, username, fill=BLACK, font=SML_FONT)
-    draw.text(at_tag_loc, at_tag, fill=BLACK, font=SML_FONT)
+    draw.text(username_loc, username, fill=BLACK, font=SML_FNT)
+    draw.text(at_tag_loc, at_tag, fill=BLACK, font=SML_FNT)
 
     return img
 
@@ -119,36 +135,34 @@ def create(target, summary, cluster_reps, sent_reps, seed=None, label=None):
     assert(len(sent_reps) == 6)
     
     img = Image.open(BACKGROUND)
+    title_size = BIG_FNT.getsize(target)
     
     width, height = img.size
-    label_loc =     (int(width * 0.80), int(height * 0.10))
-    seed_loc =      (int(width * 0.10), int(height * 0.10))
-    title_loc =     (int(width * 0.30), int(height * 0.10))
-    summary_loc =   (int(width * 0.02), int(height * 0.20))
+    label_loc =     (int(width * 0.80), int(height * 0.05))
+    seed_loc =      (int(width * 0.10), int(height * 0.05))
+    title_loc =     (width // 2 - title_size[0] // 2, int(height * 0.10))
+    summary_loc =   (int(width * 0.02), title_loc[1] + title_size[1] + BUFFER*2)
     cluster_0_loc = (int(width * 0.02), int(height * 0.45))
-    cluster_1_loc = (int(width * 0.33), int(height * 0.45))
-    cluster_2_loc = (int(width * 0.64), int(height * 0.45))
+    cluster_1_loc = (int(width * 0.34) + BUFFER // 4, int(height * 0.45))
+    cluster_2_loc = (int(width * 0.66) + BUFFER // 2, int(height * 0.45))
     sent_0_loc =    (int(width * 0.02), int(height * 0.65))
-    sent_1_loc =    (int(width * 0.33), int(height * 0.65))
-    sent_2_loc =    (int(width * 0.64), int(height * 0.65))
+    sent_1_loc =    (int(width * 0.34) + BUFFER // 4, int(height * 0.65))
+    sent_2_loc =    (int(width * 0.66) + BUFFER // 2, int(height * 0.65))
     sent_3_loc =    (int(width * 0.02), int(height * 0.85))
-    sent_4_loc =    (int(width * 0.33), int(height * 0.85))
-    sent_5_loc =    (int(width * 0.64), int(height * 0.85))
+    sent_4_loc =    (int(width * 0.34) + BUFFER // 4, int(height * 0.85))
+    sent_5_loc =    (int(width * 0.66) + BUFFER // 2, int(height * 0.85))
     
-    summary_size = (width - summary_loc[0] * 2, cluster_0_loc[1] - summary_loc[1])
-    summary_size = (summary_size[0] - BUFFER, summary_size[1] - BUFFER)
-    cluster_size = (cluster_1_loc[0] - cluster_0_loc[0], sent_0_loc[1] - cluster_0_loc[1])
-    cluster_size = (cluster_size[0] - BUFFER, cluster_size[1] - BUFFER)
-    sent_size = (sent_1_loc[0] - sent_0_loc[0], height - sent_0_loc[1])
-    sent_size = (sent_size[0] - BUFFER, sent_size[1] - BUFFER)
+    summary_size = (width - (summary_loc[0] + BUFFER), cluster_0_loc[1] - (summary_loc[1] + BUFFER))
+    cluster_size = (cluster_1_loc[0] - (cluster_0_loc[0] + BUFFER), sent_0_loc[1] - (cluster_0_loc[1] + BUFFER))
+    sent_size = (sent_1_loc[0] - (sent_0_loc[0] + BUFFER), height - (sent_0_loc[1] + BUFFER))
     
     cluster_text = ['\n'.join(textwrap.wrap(rep[2]['text'], width=32)) for rep in cluster_reps]
     sent_text = ['\n'.join(textwrap.wrap(rep, width=32)) for rep in sent_reps]
     
     draw = ImageDraw.Draw(img)
-    if label: draw.text(label_loc, f'label={label}', fill=(0, 0, 0), font=SML_FNT)
-    if seed: draw.text(seed_loc, f'seed={seed}', fill=(0, 0, 0), font=SML_FNT)
-    draw.text(title_loc, '\n' + target, fill=(0, 0, 0), font=BIG_FNT, align='center')
+    if label: draw.text(label_loc, f'label={label}', fill=BLACK, font=SML_FNT)
+    if seed: draw.text(seed_loc, f'seed={seed}', fill=BLACK, font=SML_FNT)
+    draw.text(title_loc, target, fill=BLACK, font=BIG_FNT, align='center')
     
     summary_img = ImageOps.expand(box(summary, summary_size), border=BORDER, fill=BLACK)
     
@@ -156,12 +170,12 @@ def create(target, summary, cluster_reps, sent_reps, seed=None, label=None):
     img.paste(cluster_box(cluster_reps[0], cluster_size), cluster_0_loc)
     img.paste(cluster_box(cluster_reps[1], cluster_size), cluster_1_loc)
     img.paste(cluster_box(cluster_reps[2], cluster_size), cluster_2_loc)
-    draw.text(sent_0_loc, sent_text[0], fill=(0, 0, 0), font=MED_FNT, align='center')
-    draw.text(sent_1_loc, sent_text[1], fill=(0, 0, 0), font=MED_FNT, align='center')
-    draw.text(sent_2_loc, sent_text[2], fill=(0, 0, 0), font=MED_FNT, align='center')
-    draw.text(sent_3_loc, sent_text[3], fill=(0, 0, 0), font=MED_FNT, align='center')
-    draw.text(sent_4_loc, sent_text[4], fill=(0, 0, 0), font=MED_FNT, align='center')
-    draw.text(sent_5_loc, sent_text[5], fill=(0, 0, 0), font=MED_FNT, align='center')
+    draw.text(sent_0_loc, sent_text[0], fill=BLACK, font=MED_FNT, align='center')
+    draw.text(sent_1_loc, sent_text[1], fill=BLACK, font=MED_FNT, align='center')
+    draw.text(sent_2_loc, sent_text[2], fill=BLACK, font=MED_FNT, align='center')
+    draw.text(sent_3_loc, sent_text[3], fill=BLACK, font=MED_FNT, align='center')
+    draw.text(sent_4_loc, sent_text[4], fill=BLACK, font=MED_FNT, align='center')
+    draw.text(sent_5_loc, sent_text[5], fill=BLACK, font=MED_FNT, align='center')
     
     img.save(str(REPORT_DIR / target) + '.png')
     img.show()
