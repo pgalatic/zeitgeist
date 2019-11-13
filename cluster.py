@@ -89,7 +89,10 @@ def agglomerate(samp, corpus):
             reps.append([len(cluster_tweets[idx]), confidence, cluster_tweets[idx][argcenter]])
     except IndexError:
         log(f'WARNING: There were only {len(set(clustering.labels_))} cluster(s)!')
-        pass # There were fewer clusters than NUM_CLUSTERS.
+        # Act as if there were more than two clusters by picking the first 
+        # tweet(s). This only happens if there are very few tweets in a sample,
+        # usually during testing.
+        reps.append([1, 0, samp[idx]])
     
     return reps
     

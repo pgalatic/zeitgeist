@@ -19,7 +19,6 @@ import numpy as np
 # CONSTANTS
 TIME_FORMAT = '%H:%M:%S'
 SAMPLE_SIZE = 64
-SEED = None
 
 RAW_DIR = pathlib.Path('raw/')
 DATA_DIR = pathlib.Path('data/')
@@ -37,7 +36,7 @@ if not os.path.exists(REPORT_DIR):
     os.mkdir(REPORT_DIR)
 
 # Constants for report.py
-BORDER = 40
+BORDER = 50
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 BACKGROUND = str(BRAND_DIR / 'BACKGROUND.png')
@@ -72,7 +71,7 @@ MAX_PRINTED_CLUSTSERS = 5
 def log(*args):
     '''More informative print debugging'''
     t = time.strftime(TIME_FORMAT, time.localtime())
-    s = ' '.join([str(arg) for arg in args])
+    s = '\t'.join([str(arg) for arg in args])
     print(f'[{t}]: {s}')
 
 def sample(target, size=SAMPLE_SIZE):

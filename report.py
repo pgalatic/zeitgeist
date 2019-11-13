@@ -20,42 +20,40 @@ from PIL import Image, ImageDraw, ImageFont
 from text import ImageText
 from extern import *
 
-TNY_FNT = ImageFont.truetype(FONT_BOLD, 10)
 SML_FNT = ImageFont.truetype(FONT_BOLD, 32)
-MED_FNT = ImageFont.truetype(FONT_BOLD, 48)
-BIG_FNT = ImageFont.truetype(FONT_BOLD, 96)
-LRG_FNT = ImageFont.truetype(FONT_BOLD, 128)
+MED_FNT = ImageFont.truetype(FONT_BOLD, 64)
+BIG_FNT = ImageFont.truetype(FONT_BOLD, 128)
 
-def box(text, fnt=MED_FNT, wrap=32, align='left'):
-    text = textwrap.wrap(text, width=wrap)
+def box(text, box_size):
+    border_size = (box_size[0] - BORDER, box_size[1] - BORDER)
+    img = ImageText(border_size, background=WHITE).write_text_box(text, font_filename=FONT_BOLD)
+    background = Image.new('RGB', box_size, color=WHITE)
+    background.paste(img, (BORDER, BORDER))
 
-    (w, h) = text_size(text, fnt)
+    return background
     
-    img = Image.new('RGB', size=(w+BORDER, h+BORDER), color=WHITE)
-    draw = ImageDraw.Draw(img)
-    draw.text((BORDER // 2, BORDER // 2), text, fill=BLACK, font=fnt, align=align)
-    return img
-    
-def cluster_box(rep):
+def cluster_box(rep, size):
     cardinality = rep[0]
     confidence = rep[1]
     text = rep[2]['text']
     username = rep[2]['username']
-    at_tag = rep[2]['at_tag']
+    at_tag = '@' + rep[2]['at_tag']
     
-    base = box(text)
-    (w, h) = base.size
-    base_loc = (10, 50)
-    avatar_loc = (10, 10)
-    username_loc = (20, 10)
-    at_tag_loc = (20, 20)
+    base_size = (size[0] - BORDER, size[1] - BORDER)
+    
+    base = box(text, base_size)
+    base_loc = (BORDER, BORDER)
+    avatar_loc = ((10, 10), (64, 64))
+    username_loc = (100, 10)
+    at_tag_loc = (100, 50)
+    font = ImageFont.truetype(FONT_BOLD, 32)
 
-    img = Image.new('RGB', size=(w + base_loc[0], h + base_loc[1]), color=WHITE)
-    draw = ImageDrwa.Draw(img)
-    draw.ellipse(avatar_loc, (avatar_loc[0] + 10, avatar_loc[1] + 10), fill='black')
-    draw.text(username_loc, username, fill=BLACK, fnt=TNY_FNT, align='left')
-    draw.text(at_tag_loc, at_tag, fill=BLACK, fnt=TNY_FNT, align='left')
+    img = Image.new('RGB', size=size, color=WHITE)
     img.paste(base, base_loc)
+    draw = ImageDraw.Draw(img)
+    draw.ellipse(avatar_loc, fill='black')
+    draw.text(username_loc, username, fill=BLACK, font=font)
+    draw.text(at_tag_loc, at_tag, fill=BLACK, font=font)
 
     return img
 
@@ -86,6 +84,11 @@ def create(target, summary, cluster_reps, sent_reps, seed=None, label=None):
     sent_5_loc =    (int(width * 0.65), int(height * 0.85))
     
     summary_size = (width - summary_loc[0] * 2, cluster_0_loc[1] - summary_loc[1])
+    summary_size = (summary_size[0] - BORDER, summary_size[1] - BORDER)
+    cluster_size = (cluster_1_loc[0] - cluster_0_loc[0], sent_0_loc[1] - cluster_0_loc[1])
+    cluster_size = (cluster_size[0] - BORDER, cluster_size[1] - BORDER)
+    sent_size = (sent_1_loc[0] - sent_0_loc[0], height - sent_0_loc[1])
+    sent_size = (sent_size[0] - BORDER, sent_size[1] - BORDER)
     
     cluster_text = ['\n'.join(textwrap.wrap(rep[2]['text'], width=32)) for rep in cluster_reps]
     sent_text = ['\n'.join(textwrap.wrap(rep, width=32)) for rep in sent_reps]
@@ -95,13 +98,12 @@ def create(target, summary, cluster_reps, sent_reps, seed=None, label=None):
     if seed: draw.text(seed_loc, f'seed={seed}', fill=(0, 0, 0), font=SML_FNT)
     draw.text(title_loc, '\n' + target, fill=(0, 0, 0), font=BIG_FNT, align='center')
     
-    summary_img = ImageText(summary_size, background=WHITE)
-    summary_img.write_text_box((0, 0), summary, font_filename=FONT_BOLD, font_size=96)
+    summary_img = box(summary, summary_size)
     
-    img.paste(summary_img.image, summary_loc)
-    #img.paste(cluster_box(cluster_reps[0]))
-    #img.paste(cluster_box(cluster_reps[1]))
-    #img.paste(cluster_box(cluster_reps[2]))
+    img.paste(summary_img, summary_loc)
+    img.paste(cluster_box(cluster_reps[0], cluster_size), cluster_0_loc)
+    img.paste(cluster_box(cluster_reps[1], cluster_size), cluster_1_loc)
+    img.paste(cluster_box(cluster_reps[2], cluster_size), cluster_2_loc)
     draw.text(sent_0_loc, sent_text[0], fill=(0, 0, 0), font=MED_FNT, align='center')
     draw.text(sent_1_loc, sent_text[1], fill=(0, 0, 0), font=MED_FNT, align='center')
     draw.text(sent_2_loc, sent_text[2], fill=(0, 0, 0), font=MED_FNT, align='center')
@@ -110,3 +112,4 @@ def create(target, summary, cluster_reps, sent_reps, seed=None, label=None):
     draw.text(sent_5_loc, sent_text[5], fill=(0, 0, 0), font=MED_FNT, align='center')
     
     img.save(str(REPORT_DIR / target) + '.png')
+    img.show()
