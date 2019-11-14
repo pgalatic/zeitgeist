@@ -5,7 +5,6 @@
 # 	- build summary by joining ever sentence above a certain score limit
 #       NOTE: Might need to run 'python3 -m spacy download en' to download english spacy package
 
-import csv
 import spacy
 from spacy.lang.en.stop_words import STOP_WORDS
 import wikipedia
