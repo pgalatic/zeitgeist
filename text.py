@@ -25,7 +25,7 @@ class ImageText(object):
         self.draw = ImageDraw.Draw(self.image)
         self.encoding = encoding
     
-    def split_lines(self, text, font_filename, min_size=8):
+    def split_lines(self, text, font_filename, min_size=4):
         font_size = min_size
         prev_lines = None
         prev_font = None
@@ -38,24 +38,38 @@ class ImageText(object):
             for word in words:
                 newline = ' '.join(line + [word])
                 newsize = font.getsize(newline)
+                
+                # Can we fit this line horizontally?
                 if newsize[0] < self.size[0]:
-                    # We can fit this word on the line
-                    line.append(word)
+                    # Can we fit this line vertically?
+                    if newsize[1] < height:
+                        # Then append it.
+                        line.append(word)
+                    # We need to return.
+                    else:
+                        assert(prev_lines and prev_font)
+                        return prev_lines, prev_font
                 else:
-                    # We have to make a new line
+                    # We need to make a new line.
+                    if len(line) == 1:
+                        # We can't fit this one-word line horizontally
+                        assert(prev_lines and prev_font)
+                        return prev_lines, prev_font
                     height -= newsize[1]
                     newline = ' '.join(line)
-                    if font.getsize(newline)[0] > self.size[0]:
-                        # We can't fit this one-word line horizontally
-                        return prev_lines, prev_font
                     lines.append(newline)
                     line = [word]
-            if height < 0:
-                # We can't fit this text vertically
+            # There will be one final line. Can we fit it vertically?
+            newsize = font.getsize(newline)
+            # If we can, then append it and loop again.
+            if newsize[1] < height:
+                lines.append(' '.join(line))
+                prev_lines = lines
+                prev_font = font
+                font_size += 4
+            else:
+                assert(prev_lines and prev_font)
                 return prev_lines, prev_font
-            prev_lines = lines
-            prev_font = font
-            font_size += 8
 
     def write_text_box(self, text, font_filename, color=(0, 0, 0)):
         height = 0

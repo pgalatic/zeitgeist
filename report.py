@@ -74,23 +74,21 @@ def bottom_bar(size, comments, retweets, likes, date):
     return bar
 
 def box(text, box_size):
-    BUFFER_size = (box_size[0] - BUFFER, box_size[1] - BUFFER)
-    img = ImageText(BUFFER_size, background=WHITE).write_text_box(text, font_filename=FONT_BOLD)
+    size = (box_size[0] - SPACING, box_size[1] - SPACING)
+    img = ImageText(size, background=WHITE).write_text_box(text, font_filename=FONT_BOLD)
     background = Image.new('RGB', box_size, color=WHITE)
-    background.paste(img, (BUFFER // 2, BUFFER // 2))
+    background.paste(img, (SPACING // 2, SPACING // 2))
 
     return background
-    
-def cluster_box(rep, size):
-    cardinality = rep[0]
-    confidence = rep[1]
-    text = rep[2]['text']
-    username = rep[2]['username']
-    at_tag = '@' + rep[2]['at_tag']
+
+def render_tweet(tweet, size):
+    text = tweet['text']
+    username = tweet['username']
+    at_tag = '@' + tweet['at_tag']
     comments = '' # TODO: Is this in the Twitter search API?
-    retweets = rep[2]['ret_count']
-    likes = rep[2]['fav_count']
-    date = time_string(rep[2]['timestamp'])
+    retweets = tweet['ret_count']
+    likes = tweet['fav_count']
+    date = time_string(tweet['timestamp'])
     
     if username == '': username = 'Unknown'
     if at_tag == '@': at_tag = '@unknown'
@@ -114,7 +112,7 @@ def cluster_box(rep, size):
     at_tag_loc = (100, SPACING * 2 + SML_FNT.getsize(username)[1])
     icon_loc = (size[0] - (SPACING + avatar_size[0]), SPACING)
     
-    img = ImageOps.expand(Image.new('RGB', size=size, color=WHITE), border=BORDER, fill=BLACK)
+    img = Image.new('RGB', size=size, color=WHITE)
     img.paste(base, base_loc)
     img.paste(icon, icon_loc)
     img.paste(bar, bar_loc)
@@ -123,6 +121,22 @@ def cluster_box(rep, size):
     draw.text(username_loc, username, fill=BLACK, font=SML_FNT)
     draw.text(at_tag_loc, at_tag, fill=BLACK, font=SML_FNT)
 
+    return img
+
+def cluster_box(rep, size):
+    cardinality = rep[0]
+    confidence = rep[1]
+    tweet = rep[2]
+    
+    tweet_img = render_tweet(tweet, (size[0] - BORDER*2, size[1] - (BORDER*2 + BUFFER*2)))
+    tweet_img = ImageOps.expand(tweet_img, border=BORDER, fill=BLACK)
+    tweet_loc = (0, BUFFER*2)
+    
+    stats = box(f'Represents {cardinality} tweets (Confidence: {round(confidence, 2)})', (size[0] - BUFFER, BUFFER*2))
+    
+    img = Image.new('RGB', size=size, color=WHITE)
+    img.paste(stats, (BUFFER // 2, BUFFER // 2))
+    img.paste(tweet_img, tweet_loc)
     return img
 
 def create(target, summary, cluster_reps, sent_reps, seed=None, label=None):
@@ -164,6 +178,8 @@ def create(target, summary, cluster_reps, sent_reps, seed=None, label=None):
     if seed: draw.text(seed_loc, f'seed={seed}', fill=BLACK, font=SML_FNT)
     draw.text(title_loc, target, fill=BLACK, font=BIG_FNT, align='center')
     
+    # TODO: ADD LABEL TO SUMMARY BOX
+    # TODO: ROUNDED RECTANGLES https://stackoverflow.com/questions/7787375/python-imaging-library-pil-drawing-rounded-rectangle-with-gradient
     summary_img = ImageOps.expand(box(summary, summary_size), border=BORDER, fill=BLACK)
     
     img.paste(summary_img, summary_loc)

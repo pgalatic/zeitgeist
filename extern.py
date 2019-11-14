@@ -18,7 +18,7 @@ import numpy as np
 
 # CONSTANTS
 LOGTIME_FORMAT = '%H:%M:%S'
-SAMPLE_SIZE = 2048
+SAMPLE_SIZE = 64
 
 RAW_DIR = pathlib.Path('raw/')
 DATA_DIR = pathlib.Path('data/')
@@ -41,6 +41,7 @@ BUFFER = 50
 SPACING = BUFFER // 4
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
+TRANSPARENT = (0, 0, 0, 0)
 ICON = str(BRAND_DIR / 'LOGO.png')
 COMMENT = str(BRAND_DIR / 'COMMENT.png')
 RETWEET = str(BRAND_DIR / 'RETWEET.png')
