@@ -85,7 +85,7 @@ def log(*args):
 
 def sample(target, size=SAMPLE_SIZE):
     '''Returns a sample of rows from a file in DATA_DIR.'''
-    with open(str(DATA_DIR / target) + '.csv.', 'r', newline='', encoding='utf-8') as src:
+    with open(str(DATA_DIR / target) + '.csv', 'r', newline='', encoding='utf-8') as src:
         rdr = csv.DictReader(src)
         raw = np.array([row for row in rdr])
         return raw[np.random.choice(raw.shape[0], size)]

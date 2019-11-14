@@ -8,6 +8,7 @@
 import spacy
 from spacy.lang.en.stop_words import STOP_WORDS
 import wikipedia
+import random as r
 from heapq import nlargest
 from collections import Counter
 from string import punctuation
@@ -33,7 +34,13 @@ def _is_repeat_sentence(s):
             return True
     return False
 
-def core_summary_function(document, is_twitter_corpus=False, lang='en', max_sentence_len=30):
+def get_top_tweets(tweets, num_likes=100, num_retweets=100):
+    top_n_likes = sorted(tweets, key=lambda t: t['fav_count'])[:num_likes]
+    top_n_retweets = sorted(tweets, key=lambda t: t['ret_count'])[:num_retweets]
+    return [*top_n_likes, *top_n_retweets]
+
+def core_summary_function(document, target, lang='en', max_sentence_len=30):
+    _target = target[1:]
     nlp = spacy.load(lang)
     # Had to set it to a high value to process large collections of text
     nlp.max_length = NLP_DOC_LENGTH
@@ -57,7 +64,7 @@ def core_summary_function(document, is_twitter_corpus=False, lang='en', max_sent
         w = word.text
         w = w.strip(punctuation)
         w = w.lower()
-	    # stopword omission
+        # stopword omission
         if w not in STOP_WORDS and w not in hashtag_set:
             if w not in word_freq:
                 word_freq[w] = 0
@@ -80,10 +87,12 @@ def core_summary_function(document, is_twitter_corpus=False, lang='en', max_sent
         # ignore sentences that aren't a certain length
         if len(sent) <= 2:
             continue
-        # ignore sentences that repeat the same thing over and over 
+        # ignore sentences that repeat the same thing over and over
         if _is_repeat_sentence(sent):
             continue
         for word in sent:
+            if word.text == _target:
+                continue
             w = word.text.lower()
             if w in word_freq:
                 if len(sent.text.split(' ')) < max_sentence_len:
@@ -91,7 +100,7 @@ def core_summary_function(document, is_twitter_corpus=False, lang='en', max_sent
                         sent_scores[sent] = 0
                     sent_scores[sent] += word_freq[w]
 
-    num_sentences_in_summary = 7
+    num_sentences_in_summary = 10
     summarized_sentences = nlargest(num_sentences_in_summary, sent_scores, key=sent_scores.get)
 
     # convert spacy span to string
@@ -104,7 +113,11 @@ def summarize_tweets(target, mock):
     '''Summarizes tweets passed in from zeitgeist'''
     selection = sample(target)
     log(f'Summarizing {len(selection)} tweets from {target}...')
-    corpus = ' '.join([row['text'] for row in selection])
-    summary = core_summary_function(corpus, is_twitter_corpus=True)
+    top_n_tweets = get_top_tweets(selection,
+                                  num_likes=r.randint(100, 300),
+                                  num_retweets=r.randint(100, 300))
+    log(f'Selected top {len(top_n_tweets)} tweets')
+    corpus = ' '.join([row['text'] for row in top_n_tweets])
+    summary = core_summary_function(corpus, target)
     return summary
 
