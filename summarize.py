@@ -13,6 +13,7 @@ from heapq import nlargest
 from collections import Counter
 from string import punctuation
 from extern import *
+r.seed(Q_RANDOM_SEED)
 
 # Function to test the functionality of text_summarization.py
 def _test():
@@ -34,9 +35,29 @@ def _is_repeat_sentence(s):
             return True
     return False
 
+# encapsulates logic that is repeated for num_likes and num_retweets
+def _get_top_tweets_helper(top_arr, num_for_metric, metric):
+    top_n_arr = []
+    for i, t in enumerate(top_arr):
+        if int(t[metric]) > 0:
+            top_n_arr.append(t)
+        else:
+            zero_idx = i
+            break
+    zero_occ_for_metric = top_arr[zero_idx:]
+    r.shuffle(zero_occ_for_metric)
+    num_randomly_sampled_zero_metric_tweets = num_for_metric - len(top_n_arr)
+    top_n_arr.extend(zero_occ_for_metric[:num_randomly_sampled_zero_metric_tweets])
+    return top_n_arr
+
 def get_top_tweets(tweets, num_likes=100, num_retweets=100):
-    top_n_likes = sorted(tweets, key=lambda t: t['fav_count'])[:num_likes]
-    top_n_retweets = sorted(tweets, key=lambda t: t['ret_count'])[:num_retweets]
+    top_likes = sorted(tweets, key=lambda t: int(t['fav_count']))
+    _num_likes = r.randint(len(tweets) // 2, len(tweets)) if num_likes > len(tweets) else num_likes
+    top_n_likes = _get_top_tweets_helper(top_likes, _num_likes, 'fav_count')
+
+    top_retweets = sorted(tweets, key=lambda t: int(t['ret_count']))
+    _num_retweets = r.randint(len(tweets) // 2, len(tweets)) if num_retweets > len(tweets) else num_retweets
+    top_n_retweets = _get_top_tweets_helper(top_retweets, _num_retweets, 'ret_count')
     return [*top_n_likes, *top_n_retweets]
 
 def core_summary_function(document, target, lang='en', max_sentence_len=30):
@@ -117,7 +138,7 @@ def summarize_tweets(target, mock):
                                   num_likes=r.randint(100, 300),
                                   num_retweets=r.randint(100, 300))
     log(f'Selected top {len(top_n_tweets)} tweets')
-    corpus = ' '.join([row['text'] for row in top_n_tweets])
+    corpus = ''.join([row['text'] for row in top_n_tweets])
     summary = core_summary_function(corpus, target)
     return summary
 

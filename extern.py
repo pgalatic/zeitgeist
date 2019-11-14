@@ -69,6 +69,7 @@ FILTER_STOPWORDS = True # used in cluster.py
 TEST_WIKI_ARTICLE = 'Albert Einstein'
 NLP_DOC_LENGTH = 400000
 REPEAT_THRESHOLD = 0.30
+Q_RANDOM_SEED = 42
 
 # Constants for sentiment.py
 K_START = 3
