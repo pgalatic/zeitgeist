@@ -28,7 +28,7 @@ from extern import *
 
 def arg_parser():
     ap = argparse.ArgumentParser()
-    
+
     ### Arguments for specifying pipeline (what code blocks should be executed)
     # Run full program
     ap.add_argument('--full', action='store_true',
@@ -51,7 +51,7 @@ def arg_parser():
     # Run sentiment analysis on [file]
     ap.add_argument('--sentiment', nargs='?', const=None, default=None,
         help='Performs sentiment analysis on a file, e.g. \'--sentiment=#WednesdayWisdom\'. [None]')
-        
+
     ### Arguments modifying behavior
     # Use random seed (or not).
     ap.add_argument('--seed', type=int, nargs='?', const=None, default=None,
@@ -79,7 +79,7 @@ def most_recent_file(dir):
             'directory. Are you sure you have any data?')
         sys.exit(1)
     most_recent_file = max(recent_files, key=os.path.getctime)
-    
+
     topic_name = os.path.splitext(os.path.basename(most_recent_file))[0]
     return topic_name
 
@@ -96,30 +96,30 @@ def gather_data(woeid, num_topics):
 
     log('Gathering data (crtl+C to stop early)...')
     # Tweepy SHOULD notify us if we're getting rate limited. Often it just
-    # quits, though. If it doesn't quit, then the user can progress to the 
+    # quits, though. If it doesn't quit, then the user can progress to the
     # next step via crtl+C.
     api = tweepy.API(auth,
         wait_on_rate_limit=True,
         wait_on_rate_limit_notify=True)
     # Trending tweets are stored in a CSV file in the /raw/ directory.
-    gather.trending_tweets(api, woeid, num_topics) 
+    gather.trending_tweets(api, woeid, num_topics)
 
 def deref(tweets, target):
     '''
-    Given a list of tweets from DATA_DIR, replaces their text with the 
+    Given a list of tweets from DATA_DIR, replaces their text with the
     corresponding text from the same tweet in RAW_DIR.
     '''
     tweets = sorted(tweets, key=lambda x: int(x['index']))
     with open(str(RAW_DIR / target) + '.csv', 'r', newline='', encoding='utf-8') as raw:
         rdr = csv.DictReader(raw)
         rows = [row for row in rdr]
-        
+
         for idx in range(len(tweets)):
             tweets[idx]['text'] = rows[int(tweets[idx]['index'])]['text']
 
 def process(target=None, mock=None, seed=None, label=None):
     '''
-    Gathering data takes a long time, so if we want to process an existing 
+    Gathering data takes a long time, so if we want to process an existing
     dataset, we can use this function as shorthand.
     '''
     if not target: target = most_recent_file(RAW_DIR)
@@ -136,12 +136,12 @@ def process(target=None, mock=None, seed=None, label=None):
 
 def partial(**kwargs):
     if kwargs.get('gather'):
-        # If we want to gather data (or we're running everything), call the 
+        # If we want to gather data (or we're running everything), call the
         # Twitter API and gather as much as we can.
         gather_data(kwargs.get('woeid'), kwargs.get('num_topics'))
     if kwargs.get('purify'):
         # If we want to clean data (or we're running everything), grab a target
-        # and feed it through the data cleaning algorithm. If a target isn't 
+        # and feed it through the data cleaning algorithm. If a target isn't
         # specified, the most recent file is used.
         purify.cleanse(kwargs['purify'])
     if kwargs.get('summarize'):
@@ -155,7 +155,7 @@ def partial(**kwargs):
         except MemoryError:
             log('WARN: Not enough memory to perform summarization!')
     if kwargs.get('cluster'):
-        # Find representative tweets using agglomerative clustering. 
+        # Find representative tweets using agglomerative clustering.
         if not os.path.exists(str(DATA_DIR / kwargs['cluster']) + '.csv'):
             purify.cleanse(kwargs['cluster'])
         cluster_reps = cluster.find_cluster_reps(kwargs['cluster'], kwargs['mock'])
@@ -175,12 +175,12 @@ def partial(**kwargs):
         sentiment.sentiment_clustering(tweets_df, kwargs['mock'])
         # TODO: ADD SENTIMENT TO REPORT HERE
         raw_sentiment_reps = [f'TODO SENTIMENT {idx}' for idx in range(6)]
-     
+
     if kwargs.get('report'):
-        # Use the target for sentiment here (it is the same as the targets for 
+        # Use the target for sentiment here (it is the same as the targets for
         # the other submodules when args.full or args.process is run).
-        report.create(kwargs.get('report'), summary, 
-            cluster_reps, 
+        report.create(kwargs.get('report'), summary,
+            cluster_reps,
             raw_sentiment_reps,
             kwargs.get('seed'),
             kwargs.get('label'),
@@ -189,7 +189,7 @@ def partial(**kwargs):
 def main():
     parser = arg_parser()
     args = parser.parse_args()
-    
+
     # Set the random number generator seed if one has been provided.
     if args.seed: np.random.seed(args.seed)
     # We should NEVER mock a report without using a random seed.
@@ -200,7 +200,7 @@ def main():
     if args.full:
         gather_data(args.woeid, args.num_topics)
         process(most_recent_file(RAW_DIR), args.seed, args.label)
-    # If we only want to process a specific target, then generate a report 
+    # If we only want to process a specific target, then generate a report
     # without downloading any new data.
     elif args.process:
         process(target=args.process, mock=args.mock, seed=args.seed, label=args.label)
