@@ -23,6 +23,7 @@ import purify
 import cluster
 import summarize
 import sentiment
+import report
 from extern import *
 
 def arg_parser():
@@ -52,6 +53,15 @@ def arg_parser():
         help='Performs sentiment analysis on a file, e.g. \'--sentiment=#WednesdayWisdom\'. [None]')
         
     ### Arguments modifying behavior
+    # Use random seed (or not).
+    ap.add_argument('--seed', type=int, nargs='?', const=None, default=None,
+        help='Seed for initializing random number generator.')
+    # Mock report for the purpose of experimental control.
+    ap.add_argument('--mock', action='store_true',
+        help='Mock report, choosing random tweets instead of real ones.')
+    # Add a label to a report for the purpose of experimental control.
+    ap.add_argument('--label', type=str, nargs='?', const=None, default=None,
+        help='Adds input as label to top right of report.')
     # Number of topics to analyze.
     ap.add_argument('--num_topics', nargs='?', type=int, const=1, default=1,
         help='Can only be used when --gather==True. How many datasets should be analyzed? [1]')
@@ -94,7 +104,20 @@ def gather_data(woeid, num_topics):
     # Trending tweets are stored in a CSV file in the /raw/ directory.
     gather.trending_tweets(api, woeid, num_topics) 
 
-def process(target=None):
+def deref(tweets, target):
+    '''
+    Given a list of tweets from DATA_DIR, replaces their text with the 
+    corresponding text from the same tweet in RAW_DIR.
+    '''
+    tweets = sorted(tweets, key=lambda x: int(x['index']))
+    with open(str(RAW_DIR / target) + '.csv', 'r', newline='', encoding='utf-8') as raw:
+        rdr = csv.DictReader(raw)
+        rows = [row for row in rdr]
+        
+        for idx in range(len(tweets)):
+            tweets[idx]['text'] = rows[int(tweets[idx]['index'])]['text']
+
+def process(target=None, mock=None, seed=None, label=None):
     '''
     Gathering data takes a long time, so if we want to process an existing 
     dataset, we can use this function as shorthand.
@@ -104,7 +127,11 @@ def process(target=None):
         'purify': target,
         'cluster': target,
         'summarize': target,
-        'sentiment': target
+        'sentiment': target,
+        'report': target,
+        'mock': mock,
+        'seed': seed,
+        'label': label,
     })
 
 def partial(**kwargs):
@@ -117,44 +144,66 @@ def partial(**kwargs):
         # and feed it through the data cleaning algorithm. If a target isn't 
         # specified, the most recent file is used.
         purify.cleanse(kwargs['purify'])
-    if kwargs.get('cluster'):
-        # Same as above, but for clustering.
-        if not os.path.exists(str(DATA_DIR / kwargs['cluster']) + '.csv'):
-            purify.cleanse(kwargs['cluster'])
-        cluster.agglomerate(kwargs['cluster'])
     if kwargs.get('summarize'):
-        # Same as above, but for text summarization. FIXME: This function seems
-        # to perform so poorly that it can temporarily freeze computers, and is 
-        # deactivated pending investigation.
+        # Same as above, but for text summarization.
         if not os.path.exists(str(DATA_DIR / kwargs['summarize']) + '.csv'):
             purify.cleanse(kwargs['summarize'])
         try:
-            summary = summarize.summarize_tweets(kwargs['summarize'])
+            summary = summarize.summarize_tweets(kwargs['summarize'], kwargs['mock'])
+            # TODO: ADD SUMMARY TO REPORT HERE
             log(summary)
         except MemoryError:
             log('WARN: Not enough memory to perform summarization!')
+    if kwargs.get('cluster'):
+        # Find representative tweets using agglomerative clustering. 
+        if not os.path.exists(str(DATA_DIR / kwargs['cluster']) + '.csv'):
+            purify.cleanse(kwargs['cluster'])
+        cluster_reps = cluster.find_cluster_reps(kwargs['cluster'], kwargs['mock'])
+        deref([rep[2] for rep in cluster_reps], kwargs['cluster'])
+        for idx in range(len(cluster_reps)):
+            log(f'Cluster size:\t{cluster_reps[idx][0]}')
+            log(f'Confidence:\t{round(cluster_reps[idx][1], 2)}')
+            text = cluster_reps[idx][2]['text']
+            log(f'Tweet:\t{text}')
     if kwargs.get('sentiment'):
         # Same as above, but for sentiment analysis
-        tweets = sentiment.reduce_to_indv_tweet_text(kwargs['sentiment'])
-        tweets_df = sentiment.get_sentiment_data_frame(tweets)
-        sentiment.numerical_sentiment_analysis(tweets_df)
-        sentiment.sentiment_clustering(tweets_df)
+        tweets_df = sentiment.get_sentiment_data_frame(kwargs['sentiment'])
+        # TODO: TBENDLIN -- PACKAGE YOUR RETURN DATA SO THAT IT CAN BE ADDED
+        #     TO THE REPORT HERE, IN ZEITGEIST.PY. YOU NEED TO RETURN THE FULL
+        #     ROW OF THE TWEET SO THAT IT CAN BE DEREFERENCED.
+        sentiment.numerical_sentiment_analysis(tweets_df, kwargs['mock'])
+        sentiment.sentiment_clustering(tweets_df, kwargs['mock'])
+        # TODO: ADD SENTIMENT TO REPORT HERE
+        raw_sentiment_reps = [f'TODO SENTIMENT {idx}' for idx in range(6)]
+     
+    if kwargs.get('report'):
+        # Use the target for sentiment here (it is the same as the targets for 
+        # the other submodules when args.full or args.process is run).
+        report.create(kwargs.get('report'), summary, 
+            cluster_reps, 
+            raw_sentiment_reps,
+            kwargs.get('seed'),
+            kwargs.get('label'),
+        )
 
 def main():
     parser = arg_parser()
     args = parser.parse_args()
+    
+    # Set the random number generator seed if one has been provided.
+    if args.seed: np.random.seed(args.seed)
+    # We should NEVER mock a report without using a random seed.
+    if args.mock and not (args.seed and args.label):
+        raise Exception('Never mock a report without using a random seed and a label!')
 
     # If we want to run everything, then run everything.
     if args.full:
         gather_data(args.woeid, args.num_topics)
-        process(most_recent_file(RAW_DIR))
+        process(most_recent_file(RAW_DIR), args.seed, args.label)
     # If we only want to process a specific target, then generate a report 
     # without downloading any new data.
     elif args.process:
-        if args.process == 'last':
-            process()
-        else:
-            process(target=args.process)
+        process(target=args.process, mock=args.mock, seed=args.seed, label=args.label)
     # If we're doing things a-la-carte, then pass the arguments to partial().
     elif args.gather or args.purify or args.cluster or args.summarize or args.sentiment:
         partial(**vars(args))

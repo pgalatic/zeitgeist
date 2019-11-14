@@ -26,12 +26,12 @@ from mpl_toolkits.mplot3d import Axes3D
 from extern import *
 
 '''
-    Retrieves the tweets from a given .csv file.
+    Retrieves the tweets from a given .csv file. DEPRECATED.
 
     @parameter target (string) filename
     @returns (list) list of tweets
 '''
-def reduce_to_indv_tweet_text(target):
+def reduce_to_indv_tweet_text(target, mock):
     pathname = str(DATA_DIR / target) + '.csv'
     if not isfile(pathname):
         log(f'data file {pathname} does not exist.')
@@ -58,7 +58,9 @@ def reduce_to_indv_tweet_text(target):
     @param tweets (list) list of tweet text
     @returns (Dataframe) pandas dataframe of tweets and sentiment values
 '''
-def get_sentiment_data_frame(tweets):
+def get_sentiment_data_frame(target):
+    tweets = [row['text'] for row in sample(target)]
+
     tweets_map = {
         'tweet': [],
         'compound': [],
@@ -89,7 +91,7 @@ def get_sentiment_data_frame(tweets):
 
     @param tweets_df (Dataframe) dataframe of tweets and sentiment scores
 '''
-def numerical_sentiment_analysis(tweets_df):
+def numerical_sentiment_analysis(tweets_df, mock):
 
     # Get the average compound score to find out what the overall sentiment is
     avg_compound = tweets_df['compound'].mean()
@@ -134,7 +136,7 @@ def numerical_sentiment_analysis(tweets_df):
     @param tweets_df (Dataframe) dataframe of tweets and sentiment scores
     @param debug (boolean) flag for printing out kmeans information
 '''
-def sentiment_clustering(tweets_df, debug=False, plot_clusters=False):
+def sentiment_clustering(tweets_df, mock, debug=False, plot_clusters=False):
     sentiment_vector = tweets_df[['pos', 'neg', 'neu']].values
 
     k_means_results = run_k_means(sentiment_vector, debug)
