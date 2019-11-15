@@ -103,6 +103,7 @@ def core_summary_function(document, target, lang='en', max_sentence_len=30):
     # 		(non-stop words in our word freq table)
 
     sentence_list = [sentence for sentence in nlp_doc.sents]
+    seen_sentences = set()
 
     sent_scores = {}
     for sent in sentence_list:
@@ -112,6 +113,10 @@ def core_summary_function(document, target, lang='en', max_sentence_len=30):
         # ignore sentences that repeat the same thing over and over
         if _is_repeat_sentence(sent):
             continue
+        # ignore sentences that are duplicates
+        if sent.text.strip() in seen_sentences:
+            continue
+        seen_sentences.add(sent.text.strip())
         for word in sent:
             if word.text == _target:
                 continue
@@ -122,7 +127,7 @@ def core_summary_function(document, target, lang='en', max_sentence_len=30):
                         sent_scores[sent] = 0
                     sent_scores[sent] += word_freq[w]
 
-    num_sentences_in_summary = 10
+    num_sentences_in_summary = 5
     summarized_sentences = nlargest(num_sentences_in_summary, sent_scores, key=sent_scores.get)
 
     # convert spacy span to string

@@ -115,7 +115,7 @@ def deref(tweets, target):
         rows = [row for row in rdr]
 
         for idx in range(len(tweets)):
-            tweets[idx]['text'] = rows[int(tweets[idx]['index'])]['text']
+            tweets[idx]['text'] = rows[int(tweets[idx]['index'])]['text'].replace('&amp;', '&')
 
 def log_reps(reps):
     for idx in range(len(reps)):

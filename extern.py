@@ -19,7 +19,7 @@ import numpy as np
 # CONSTANTS
 DEBUG = True
 LOGTIME_FORMAT = '%H:%M:%S'
-SAMPLE_SIZE = 64
+SAMPLE_SIZE = 2048
 SAMPLE = None
 
 RAW_DIR = pathlib.Path('raw/')
@@ -39,8 +39,8 @@ if not os.path.exists(REPORT_DIR):
 
 # Constants for report.py
 BORDER = 3
-BUFFER = 50
-SPACING = BUFFER // 4
+BUFFER = 32
+SPACING = BUFFER // 2
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 TRANSPARENT = (0, 0, 0, 0)

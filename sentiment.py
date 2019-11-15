@@ -349,7 +349,7 @@ def convert_to_reps(t_sample, cluster_dfs):
     for cluster_df in cluster_dfs:
         for _, cluster in cluster_df.iterrows():
             cluster_rep = []
-            cluster_rep.append(cluster['cluster_size'])
+            cluster_rep.append(int(cluster['cluster_size']))
             cluster_rep.append(cluster['center_compound'])
             cluster_rep.append(t_sample[int(cluster['center_tweet_id'])])
             reps.append(cluster_rep)
