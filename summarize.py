@@ -5,6 +5,7 @@
 # 	- build summary by joining ever sentence above a certain score limit
 #       NOTE: Might need to run 'python3 -m spacy download en' to download english spacy package
 
+import re
 import spacy
 from spacy.lang.en.stop_words import STOP_WORDS
 import wikipedia
@@ -39,7 +40,7 @@ def _is_repeat_sentence(s):
 def _get_top_tweets_helper(top_arr, num_for_metric, metric):
     top_n_arr = []
     for i, t in enumerate(top_arr):
-        if int(t[metric]) > 0:
+        if int(t[metric] if t[metric] else 0) > 0:
             top_n_arr.append(t)
         else:
             zero_idx = i
@@ -51,11 +52,11 @@ def _get_top_tweets_helper(top_arr, num_for_metric, metric):
     return top_n_arr
 
 def get_top_tweets(tweets, num_likes=100, num_retweets=100):
-    top_likes = sorted(tweets, key=lambda t: int(t['fav_count']))
+    top_likes = sorted(tweets, key=lambda t: int(t['fav_count'] if t['fav_count'] else 0))
     _num_likes = r.randint(len(tweets) // 2, len(tweets)) if num_likes > len(tweets) else num_likes
     top_n_likes = _get_top_tweets_helper(top_likes, _num_likes, 'fav_count')
 
-    top_retweets = sorted(tweets, key=lambda t: int(t['ret_count']))
+    top_retweets = sorted(tweets, key=lambda t: int(t['ret_count'] if t['ret_count'] else 0))
     _num_retweets = r.randint(len(tweets) // 2, len(tweets)) if num_retweets > len(tweets) else num_retweets
     top_n_retweets = _get_top_tweets_helper(top_retweets, _num_retweets, 'ret_count')
     return [*top_n_likes, *top_n_retweets]
@@ -125,8 +126,10 @@ def core_summary_function(document, target, lang='en', max_sentence_len=30):
     summarized_sentences = nlargest(num_sentences_in_summary, sent_scores, key=sent_scores.get)
 
     # convert spacy span to string
-    final_sentences = [s.text.replace('\n', ' ').strip() for s in summarized_sentences]
-    final_summary = ' .'.join(final_sentences)
+    final_sentences = [s.text.replace('\n', ' ').replace('.', ' ').strip().capitalize() for s in summarized_sentences]
+    final_summary = '. '.join(final_sentences) + '.'
+    for pattern, replacement in REPLACE_DICT.items():
+        final_summary = re.sub(pattern, replacement, final_summary)
 
     return final_summary
 

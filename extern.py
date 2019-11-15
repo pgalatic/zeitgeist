@@ -18,7 +18,8 @@ import numpy as np
 
 # CONSTANTS
 LOGTIME_FORMAT = '%H:%M:%S'
-SAMPLE_SIZE = 64
+SAMPLE_SIZE = 2048
+SAMPLE = None
 
 RAW_DIR = pathlib.Path('raw/')
 DATA_DIR = pathlib.Path('data/')
@@ -67,6 +68,18 @@ CORRECT_SPELLING = False
 FILTER_STOPWORDS = True # used in cluster.py
 
 # Constants used for summarize.py
+REPLACE_DICT = {
+    r'w .w' : r'w. w',
+    '\.\.'  : '.',
+    ' s '   : '\'s ',
+    ' t '   : '\'t ',
+    ' \. '  : '. ',
+    ' Dr '  : ' Dr. ',
+    ' Mr '  : ' Mr. ',
+    ' Ms '  : ' Ms. ',
+    ' Jr '  : ' Jr. ',
+    ' Sr '  : ' Sr. '
+}
 TEST_WIKI_ARTICLE = 'Albert Einstein'
 NLP_DOC_LENGTH = 400000
 REPEAT_THRESHOLD = 0.30
@@ -86,8 +99,18 @@ def log(*args):
     print(f'[{t}]: {s}')
 
 def sample(target, size=SAMPLE_SIZE):
-    '''Returns a sample of rows from a file in DATA_DIR.'''
-    with open(str(DATA_DIR / target) + '.csv', 'r', newline='', encoding='utf-8') as src:
-        rdr = csv.DictReader(src)
-        raw = np.array([row for row in rdr])
-        return raw[np.random.choice(raw.shape[0], size)]
+    '''
+    Returns a sample of rows from a file in DATA_DIR. A sample is only 
+    calculated once, and should be re-used between modules.
+    '''
+    global SAMPLE
+    try:
+        if SAMPLE == None:
+            with open(str(DATA_DIR / target) + '.csv', 'r', newline='', encoding='utf-8') as src:
+                rdr = csv.DictReader(src)
+                raw = np.array([row for row in rdr])
+                SAMPLE = raw[np.random.choice(raw.shape[0], size)]
+    except ValueError:
+        # Sample already exists.
+        pass
+    return SAMPLE
