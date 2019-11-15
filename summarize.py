@@ -52,11 +52,11 @@ def _get_top_tweets_helper(top_arr, num_for_metric, metric):
     return top_n_arr
 
 def get_top_tweets(tweets, num_likes=100, num_retweets=100):
-    top_likes = sorted(tweets, key=lambda t: int(t['fav_count'] if t['fav_count'] else 0))
+    top_likes = sorted(tweets, key=lambda t: int(t['fav_count'] if t['fav_count'] else 0), reverse=True)
     _num_likes = r.randint(len(tweets) // 2, len(tweets)) if num_likes > len(tweets) else num_likes
     top_n_likes = _get_top_tweets_helper(top_likes, _num_likes, 'fav_count')
 
-    top_retweets = sorted(tweets, key=lambda t: int(t['ret_count'] if t['ret_count'] else 0))
+    top_retweets = sorted(tweets, key=lambda t: int(t['ret_count'] if t['ret_count'] else 0), reverse=True)
     _num_retweets = r.randint(len(tweets) // 2, len(tweets)) if num_retweets > len(tweets) else num_retweets
     top_n_retweets = _get_top_tweets_helper(top_retweets, _num_retweets, 'ret_count')
     return [*top_n_likes, *top_n_retweets]
