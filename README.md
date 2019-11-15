@@ -78,8 +78,8 @@ Analyze trending twitter topics and use NLP to generate a summary
         - [x] report 3 most extreme clusters (most positive, most negative, most neutral)
         - [x] also report 3 largest clusters that are not the same as the most extreme clusters
         - [x] report semiment value of cluster centers as well as the tweets represented by the center (for color coding)
-        - [ ] add random control
-            - [ ] pick six random tweets and sort by sentiment so that they can "mock" as the centers of the six clusters described above
+        - [x] add random control
+            - [x] pick six random tweets and sort by sentiment so that they can "mock" as the centers of the six clusters described above
     - [ ] qxh5696: add random control
         - [ ] change summary to be up only M characters (say, 500) for consistency
         - [ ] add parameter that, when true, will return a summary of random sentences that add up to M characters
