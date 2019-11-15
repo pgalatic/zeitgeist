@@ -18,7 +18,7 @@ import numpy as np
 
 # CONSTANTS
 LOGTIME_FORMAT = '%H:%M:%S'
-SAMPLE_SIZE = 2048
+SAMPLE_SIZE = 64
 SAMPLE = None
 
 RAW_DIR = pathlib.Path('raw/')

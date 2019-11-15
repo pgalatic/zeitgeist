@@ -59,14 +59,15 @@ class ImageText(object):
                     newline = ' '.join(line)
                     lines.append(newline)
                     line = [word]
-            # There will be one final line. Can we fit it vertically?
-            newsize = font.getsize(newline)
-            # If we can, then append it and loop again.
-            if newsize[1] < height:
+            # There will be one final line. Can it fit?
+            newsize = font.getsize(' '.join(line))
+            # If it can, then append it and try the next size.
+            if newsize[0] < self.size[0] and newsize[1] < height:
                 lines.append(' '.join(line))
                 prev_lines = lines
                 prev_font = font
                 font_size += 4
+            # Otherwise, return the previous lines and size.
             else:
                 assert(prev_lines and prev_font)
                 return prev_lines, prev_font

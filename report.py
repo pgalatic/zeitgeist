@@ -123,6 +123,14 @@ def render_tweet(tweet, size):
 
     return img
 
+def summary_box(summary, size):
+    text_size = (size[0] - BUFFER, size[1] - BUFFER)
+    summary_img = box(summary, text_size)
+    img = Image.new('RGB', size, color=WHITE)
+    img.paste(summary_img, (BUFFER // 2, BUFFER // 2))
+
+    return ImageOps.expand(img, border=BORDER, fill=BLACK)
+
 def cluster_box(rep, size):
     cardinality = rep[0]
     confidence = rep[1]
@@ -152,9 +160,9 @@ def create(target, summary, cluster_reps, sent_reps, seed=None, label=None):
     title_size = BIG_FNT.getsize(target)
     
     width, height = img.size
-    label_loc =     (int(width * 0.80), int(height * 0.05))
-    seed_loc =      (int(width * 0.10), int(height * 0.05))
-    title_loc =     (width // 2 - title_size[0] // 2, int(height * 0.10))
+    label_loc =     (int(width * 0.80), int(height * 0.02))
+    seed_loc =      (int(width * 0.10), int(height * 0.02))
+    title_loc =     (width // 2 - title_size[0] // 2, int(height * 0.05))
     summary_loc =   (int(width * 0.02), title_loc[1] + title_size[1] + BUFFER*2)
     cluster_0_loc = (int(width * 0.02), int(height * 0.45))
     cluster_1_loc = (int(width * 0.34) + BUFFER // 4, int(height * 0.45))
@@ -180,7 +188,7 @@ def create(target, summary, cluster_reps, sent_reps, seed=None, label=None):
     
     # TODO: ADD LABEL TO SUMMARY BOX
     # TODO: ROUNDED RECTANGLES https://stackoverflow.com/questions/7787375/python-imaging-library-pil-drawing-rounded-rectangle-with-gradient
-    summary_img = ImageOps.expand(box(summary, summary_size), border=BORDER, fill=BLACK)
+    summary_img = summary_box(summary, summary_size)
     
     img.paste(summary_img, summary_loc)
     img.paste(cluster_box(cluster_reps[0], cluster_size), cluster_0_loc)
