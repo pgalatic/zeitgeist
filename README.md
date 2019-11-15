@@ -74,7 +74,7 @@ Analyze trending twitter topics and use NLP to generate a summary
         - [ ] generate infographic image with tweet information organized in a visually pleasant way
         - [ ] add function for transforming old datasets into new format
         - [x] add random control
-    - [ ] tbendlin:
+    - [x] tbendlin:
         - [x] report 3 most extreme clusters (most positive, most negative, most neutral)
         - [x] also report 3 largest clusters that are not the same as the most extreme clusters
         - [x] report semiment value of cluster centers as well as the tweets represented by the center (for color coding)
