@@ -66,8 +66,9 @@ REPEAT_THRESHOLD = 0.30
 K_START = 3
 K_END = 15
 BEST_K_IDX = 5
+DEFAULT_NUM_CLUSTERS = 8
 NEUTRAL_CUTOFF = 0.1
-MAX_PRINTED_CLUSTSERS = 5
+MAX_PRINTED_CLUSTERS = 3
 
 def log(*args):
     '''More informative print debugging'''

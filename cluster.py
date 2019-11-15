@@ -122,4 +122,6 @@ def find_cluster_reps(target, mock):
     
     log('...done.')
     return reps
-        
+
+if __name__ == '__main__':
+    cluster_reps = find_cluster_reps('#VeteransDay', False)

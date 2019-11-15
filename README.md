@@ -75,9 +75,9 @@ Analyze trending twitter topics and use NLP to generate a summary
         - [ ] add function for transforming old datasets into new format
         - [x] add random control
     - [ ] tbendlin:
-        - [ ] report 3 most extreme clusters (most positive, most negative, most neutral)
-        - [ ] also report 3 largest clusters that are not the same as the most extreme clusters
-        - [ ] report semiment value of cluster centers as well as the tweets represented by the center (for color coding)
+        - [x] report 3 most extreme clusters (most positive, most negative, most neutral)
+        - [x] also report 3 largest clusters that are not the same as the most extreme clusters
+        - [x] report semiment value of cluster centers as well as the tweets represented by the center (for color coding)
         - [ ] add random control
             - [ ] pick six random tweets and sort by sentiment so that they can "mock" as the centers of the six clusters described above
     - [ ] qxh5696: add random control
