@@ -49,8 +49,38 @@ def find_sentiment_cluster_reps(target, mock, cluster_method='kmeans', debug=Fal
 
     # If mocking the data, use a random sample
     if mock:
-        # TODO: Mock representation
-        pass
+        subsamp = t_sample[np.random.choice(t_sample.shape[0], 6)]
+        reps = [[0, np.random.uniform(0.5), item] for item in subsamp]
+
+        # Using the actual sentiment analyzer so its not as obvious that the
+        # tweet reps are randomly generated
+        analyzer = SentimentIntensityAnalyzer()
+
+        idx = 0
+        for row in subsamp:
+            sentiment = analyzer.polarity_scores(row['text'])
+            reps[idx][1] = sentiment['compound']
+            idx += 1
+
+        # Mock cluster sizes so they appear reasonable.
+        reps[0][0] = np.random.randint(SAMPLE_SIZE / 5, SAMPLE_SIZE / 3)
+        reps[1][0] = np.random.randint(SAMPLE_SIZE / 10, SAMPLE_SIZE / 3)
+        reps[2][0] = np.random.randint(SAMPLE_SIZE / 8, SAMPLE_SIZE / 3)
+        reps[3][0] = np.random.randint(SAMPLE_SIZE / 5, SAMPLE_SIZE / 1.5)
+        reps[4][0] = np.random.randint(SAMPLE_SIZE / 5, SAMPLE_SIZE / 2)
+        reps[5][0] = np.random.randint(SAMPLE_SIZE / 2, SAMPLE_SIZE / 1.5)
+
+        # Sort the first three into pos, neg, neutral
+        reps[:3] = sorted(reps[:3], key=lambda x: x[1], reverse=True)
+        temp = reps[2]
+        reps[2] = reps[1]
+        reps[1] = temp
+
+        # Sort the last (3) by size
+        reps[3:] = sorted(reps[3:], key=lambda x: x[0], reverse=True)
+
+        return reps
+
 
     # Converts tweets sample to dataframe of tweets with sentiment values
     sentiment_df = get_sentiment_data_frame(t_sample)
@@ -170,7 +200,6 @@ def run_dbscan(tweets_df):
     using the matplotlib library.
 
     @param tweets_df (Dataframe) dataframe of tweets and sentiment scores
-    @param cluster_label (string) pandas dataframe key for clustering results
     @param num_clusters (int) the number of clusters for the label
 '''
 def plot_clustering_results(tweets_df, num_clusters, plot_title="Clustering of Sentiment Distribution"):
@@ -370,5 +399,16 @@ def numerical_sentiment_analysis(tweets_df, mock):
 
 
 if __name__ == '__main__':
-    reps = find_sentiment_cluster_reps("#DisneyPlus", False)
-    print(reps)
+    reps = find_sentiment_cluster_reps("#DisneyPlus", True)
+    for rep in reps:
+        print("Cluster size: ", rep[0])
+        print("Sentiment score: ", rep[1])
+        print("Tweet Info:")
+        print("\tid: ", rep[2]['id'])
+        print("\t@", rep[2]['at_tag'])
+        print("\t# favs: ", rep[2]['fav_count'])
+        print("\t# retweets: ", rep[2]['ret_count'])
+        print("\ttext: ", rep[2]['text'])
+        print("\ttimestamp: ", rep[2]['timestamp'])
+        print("\tusername: ", rep[2]['username'])
+        print("\n\n")
