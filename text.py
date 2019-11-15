@@ -25,7 +25,7 @@ class ImageText(object):
         self.draw = ImageDraw.Draw(self.image)
         self.encoding = encoding
     
-    def split_lines(self, text, font_filename, min_size=4):
+    def split_lines(self, text, font_filename, min_size=8):
         font_size = min_size
         prev_lines = None
         prev_font = None
@@ -66,7 +66,7 @@ class ImageText(object):
                 lines.append(' '.join(line))
                 prev_lines = lines
                 prev_font = font
-                font_size += 4
+                font_size += 8
             # Otherwise, return the previous lines and size.
             else:
                 assert(prev_lines and prev_font)

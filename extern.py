@@ -17,6 +17,7 @@ import pathlib
 import numpy as np
 
 # CONSTANTS
+DEBUG = True
 LOGTIME_FORMAT = '%H:%M:%S'
 SAMPLE_SIZE = 64
 SAMPLE = None

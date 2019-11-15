@@ -117,6 +117,13 @@ def deref(tweets, target):
         for idx in range(len(tweets)):
             tweets[idx]['text'] = rows[int(tweets[idx]['index'])]['text']
 
+def log_reps(reps):
+    for idx in range(len(reps)):
+        log(f'Cluster size:\t{reps[idx][0]}')
+        log(f'Confidence:\t{round(reps[idx][1], 2)}')
+        text = reps[idx][2]['text']
+        log(f'Tweet:\t{text}')
+
 def process(target=None, mock=None, seed=None, label=None):
     '''
     Gathering data takes a long time, so if we want to process an existing
@@ -160,28 +167,19 @@ def partial(**kwargs):
             purify.cleanse(kwargs['cluster'])
         cluster_reps = cluster.find_cluster_reps(kwargs['cluster'], kwargs['mock'])
         deref([rep[2] for rep in cluster_reps], kwargs['cluster'])
-        for idx in range(len(cluster_reps)):
-            log(f'Cluster size:\t{cluster_reps[idx][0]}')
-            log(f'Confidence:\t{round(cluster_reps[idx][1], 2)}')
-            text = cluster_reps[idx][2]['text']
-            log(f'Tweet:\t{text}')
+        if DEBUG: log_reps(cluster_reps)
     if kwargs.get('sentiment'):
         # Same as above, but for sentiment analysis
-        tweets_df = sentiment.get_sentiment_data_frame(kwargs['sentiment'])
-        # TODO: TBENDLIN -- PACKAGE YOUR RETURN DATA SO THAT IT CAN BE ADDED
-        #     TO THE REPORT HERE, IN ZEITGEIST.PY. YOU NEED TO RETURN THE FULL
-        #     ROW OF THE TWEET SO THAT IT CAN BE DEREFERENCED.
-        sentiment.numerical_sentiment_analysis(tweets_df, kwargs['mock'])
-        sentiment.sentiment_clustering(tweets_df, kwargs['mock'])
-        # TODO: ADD SENTIMENT TO REPORT HERE
-        raw_sentiment_reps = [f'TODO SENTIMENT {idx}' for idx in range(6)]
+        sent_reps = sentiment.find_sentiment_cluster_reps(kwargs['sentiment'], kwargs['mock'])
+        deref([rep[2] for rep in sent_reps], kwargs['sentiment'])
+        if DEBUG: log_reps(sent_reps)
 
     if kwargs.get('report'):
         # Use the target for sentiment here (it is the same as the targets for
         # the other submodules when args.full or args.process is run).
         report.create(kwargs.get('report'), summary,
             cluster_reps,
-            raw_sentiment_reps,
+            sent_reps,
             kwargs.get('seed'),
             kwargs.get('label'),
         )
