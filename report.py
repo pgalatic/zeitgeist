@@ -93,7 +93,7 @@ def top_bar(size, username, at_tag):
     draw = ImageDraw.Draw(img)
     
     avatar_size = (height - BUFFER, height - BUFFER)
-    avatar_loc = ((BUFFER // 2, BUFFER // 2), (avatar_size[0] + SPACING, avatar_size[1] + SPACING))
+    avatar_loc = ((SPACING, SPACING), (avatar_size[0] + SPACING, avatar_size[1] + SPACING))
     
     username_size = SML_FNT.getsize(username)
     username_loc = (avatar_loc[1][0] + SPACING, SPACING)
@@ -189,15 +189,15 @@ def summary_box(summary, size):
     rectround.rectangle(base_draw, base_size, border=BLACK)
     base_loc = (0, BUFFER*3)
     
-    summary_size = (base_size[0] - BUFFER, base_size[1] - BUFFER)
+    summary_size = (base_size[0] - BUFFER*4, base_size[1] - BUFFER*4)
     summary_img = box(summary, summary_size)
-    summary_loc = (BUFFER // 2, BUFFER // 2)
+    summary_loc = (BUFFER*2, BUFFER*2)
     
     base.paste(summary_img, summary_loc)
     
     notice_size = (width - BUFFER, BUFFER*2)
-    notice_img = box('Here\'s what people are saying.', notice_size)
-    notice_loc = (BUFFER // 2, BUFFER // 2)
+    notice_img = box('Here\'s a summary of what people are saying.', notice_size)
+    notice_loc = (BUFFER, BUFFER // 2)
     
     img = Image.new('RGBA', size, color=BLANK)
     draw = ImageDraw.Draw(img)
@@ -234,9 +234,9 @@ def graph_box(size):
     width, height = size
     
     struct_0 = 'The tweets below represent different factions on Twitter.'
-    struct_1 = '- The top 3 reflect groups of people who use the same words.'
-    struct_2 = '- The middle 3 reflect groups of people who feel intensely.'
-    struct_3 = '- The bottom 3 reflect the feelings of the most people.'
+    struct_1 = '- The top 3 represent factions who each use the same words.'
+    struct_2 = '- The middle 3 represent factions who feel strongly on this subject.'
+    struct_3 = '- The bottom 3 represent the largest factions who all feel similarly.'
     struct_4 = 'The bar at the top of each tweet reflects the size of the faction.'
     struct_size = SML_FNT.getsize(struct_4)
     struct_0_loc = (SPACING*2, SPACING)
@@ -261,7 +261,7 @@ def graph_box(size):
     cluster_loc = (width - (cluster_size[0] + BUFFER), BUFFER)
     
     sent_size = (width // 2 - BUFFER, height // 3)
-    sent_bar = colorbar(sent_color, sent_size, 'Negative', 'Positive', -1, 1)
+    sent_bar = colorbar(sent_color, sent_size, 'Negative sentiment', 'Positive sentiment', -1, 1)
     sent_loc = (width - (sent_size[0] + BUFFER), cluster_loc[1] + cluster_size[1] + BUFFER)
     
     base.paste(cluster_bar, cluster_loc, cluster_bar)
@@ -321,11 +321,14 @@ def create(target, summary, cluster_reps, sent_reps, seed=None, label=None):
     assert(len(sent_reps) == 6)
     
     img = Image.open(BACKGROUND).convert('RGBA')
+    name = 'powered by Zeitgeist'
     title_size = BIG_FNT.getsize(target)
+    name_size = SML_FNT.getsize(name)
     
     width, height = img.size
     label_loc =     (int(width * 0.80), int(height * 0.02))
     seed_loc =      (int(width * 0.10), int(height * 0.02))
+    name_loc =      (width // 2 - name_size[0] // 2, int(height * 0.02))
     title_loc =     (width // 2 - title_size[0] // 2, int(height * 0.05))
     summary_loc =   (int(width * 0.02), title_loc[1] + title_size[1] + BUFFER)
     graph_loc =     (int(width * 0.02), int(height * 0.40))
@@ -347,6 +350,7 @@ def create(target, summary, cluster_reps, sent_reps, seed=None, label=None):
     draw = ImageDraw.Draw(img)
     if label: draw.text(label_loc, f'label={label}', fill=BLACK, font=SML_FNT)
     if seed: draw.text(seed_loc, f'seed={seed}', fill=BLACK, font=SML_FNT)
+    draw.text(name_loc, name, fill=BLACK, font=SML_FNT, align='center')
     draw.text(title_loc, target, fill=BLACK, font=BIG_FNT, align='center')
     
     # TODO: ADD LABEL TO SUMMARY BOX

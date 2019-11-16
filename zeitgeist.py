@@ -185,6 +185,7 @@ def partial(**kwargs):
         )
 
 def main():
+    log('Starting...')
     parser = arg_parser()
     args = parser.parse_args()
 
@@ -208,6 +209,8 @@ def main():
     # Otherwise, print a usage statement.
     else:
         parser.print_help(sys.stdout)
+    
+    log('...done.')
 
 if __name__ == '__main__':
     log('usage: python driver')
