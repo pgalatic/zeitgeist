@@ -10,14 +10,18 @@
 import os
 import pdb
 import sys
+import math
+import operator
 import textwrap
 from datetime import datetime
 
 # EXTERNAL LIB
 import tweepy
+from colour import Color
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 # PROJECT LIB
+import rectround
 from text import ImageText
 from extern import *
 
@@ -28,14 +32,41 @@ BIG_FNT = ImageFont.truetype(FONT_BOLD, 128)
 def time_string(timestamp):
     dt = datetime.strptime(timestamp, TIME_FORMAT)
     return dt.strftime(OUT_FORMAT)
+    
+def cluster_color(score):
+    '''
+    Scores are between 0 and 1.
+    '''
+    score = math.floor(min(score * 100, 99.99))
+    gry = Color(rgb=(170/255, 184/255, 194/255))
+    wht = Color(rgb=(1, 1, 1))
+    gradient = list(gry.range_to(wht, 100))
+    color = tuple(int(val * 255) for val in gradient[score].rgb)
+    return color
 
-def box(text, box_size):
-    size = (box_size[0] - BUFFER, box_size[1] - BUFFER)
-    img = ImageText(size, background=WHITE).write_text_box(text, font_filename=FONT_BOLD)
-    background = Image.new('RGB', box_size, color=WHITE)
-    background.paste(img, (BUFFER // 2, BUFFER // 2))
+def sent_color(score):
+    '''
+    Scores are between -1 and 1.
+    '''
+    score = math.floor(min((score + 1) * 50, 99.99))
+    red = Color(rgb=(1, 179/255, 186/255))
+    grn = Color(rgb=(186/255, 1, 201/255))
+    gradient = list(red.range_to(grn, 100))
+    color = tuple(int(val * 255) for val in gradient[score].rgb)
+    return color
 
-    return background
+def box(text, size, fill=WHITE):
+    width, height = size
+    
+    text_size = (width, height)
+    text_img = ImageText(text_size, background=fill).write_text_box(text, font_filename=FONT_BOLD)
+    text_loc = (0, 0)
+    
+    img = Image.new('RGBA', size, color=BLANK)    
+
+    img.paste(text_img, text_loc)
+
+    return img
 
 def icon_text(icon, text):
     text_size = SML_FNT.getsize(text)
@@ -43,7 +74,7 @@ def icon_text(icon, text):
 
     total_size = (icon.size[0] + text_size[0] + SPACING, max(icon.size[1], text_size[1]))
     
-    img = Image.new('RGB', total_size, color=WHITE)
+    img = Image.new('RGBA', total_size, color=WHITE)
     draw = ImageDraw.Draw(img)
     
     img.paste(icon, (0, 0))
@@ -53,10 +84,11 @@ def icon_text(icon, text):
 
 def top_bar(size, username, at_tag):
     width, height = size
+    
     if username == '': username = 'Unknown'
     if at_tag == '@': at_tag = '@unknown'
 
-    img = Image.new('RGB', size, color=WHITE)
+    img = Image.new('RGBA', size, color=WHITE)
     draw = ImageDraw.Draw(img)
     
     avatar_size = (height - BUFFER, height - BUFFER)
@@ -81,6 +113,7 @@ def top_bar(size, username, at_tag):
 
 def bottom_bar(size, comments, retweets, likes, date):
     width, height = size
+    
     if comments == '': comments = '0'
     if retweets == '': retweets = '0'
     if likes == '': likes = '0'
@@ -103,7 +136,7 @@ def bottom_bar(size, comments, retweets, likes, date):
     like_loc = (BUFFER*3 + img_comment.size[0] + img_retweet.size[0], 0)
     mail_loc = (BUFFER*4 + img_comment.size[0] + img_retweet.size[0] + img_like.size[0], 0)
     
-    bar = Image.new('RGB', size=(width, height), color=WHITE)
+    bar = Image.new('RGBA', size=(width, height), color=WHITE)
     bar.paste(img_comment, comment_loc)
     bar.paste(img_retweet, retweet_loc)
     bar.paste(img_like, like_loc)
@@ -118,6 +151,7 @@ def bottom_bar(size, comments, retweets, likes, date):
 
 def render_tweet(tweet, size):
     width, height = size
+    
     text = tweet['text']
     username = tweet['username']
     at_tag = '@' + tweet['at_tag']
@@ -138,7 +172,7 @@ def render_tweet(tweet, size):
     base = box(text, base_size)
     base_loc = (0, top_size[1])
     
-    img = Image.new('RGB', size=size, color=WHITE)
+    img = Image.new('RGBA', size=size, color=WHITE)
     img.paste(top, top_loc)
     img.paste(base, base_loc)
     img.paste(bottom, bottom_loc)
@@ -147,40 +181,66 @@ def render_tweet(tweet, size):
 
 def summary_box(summary, size):
     width, height = size
-    summary_size = (width - BORDER*2, height - (BORDER*2 + BUFFER))
-    summary_img = ImageOps.expand(box(summary, summary_size), border=BORDER, fill=BLACK)
-    summary_loc = (0, BUFFER*2)
+    
+    base_size = (width, height - BUFFER*3)
+    base = Image.new('RGBA', base_size, color=BLANK)
+    base_draw = ImageDraw.Draw(base)
+    rectround.rectangle(base_draw, base_size, border=BLACK)
+    base_loc = (0, BUFFER*3)
+    
+    summary_size = (base_size[0] - BUFFER, base_size[1] - BUFFER)
+    summary_img = box(summary, summary_size)
+    summary_loc = (BUFFER // 2, BUFFER // 2)
+    
+    base.paste(summary_img, summary_loc)
     
     notice_size = (width - BUFFER, BUFFER*2)
     notice_img = box('Here\'s what people are saying.', notice_size)
     notice_loc = (BUFFER // 2, BUFFER // 2)
     
-    img = Image.new('RGB', size, color=WHITE)
+    img = Image.new('RGBA', size, color=BLANK)
+    draw = ImageDraw.Draw(img)
+    rectround.rectangle(draw, size)
     img.paste(notice_img, notice_loc)
-    img.paste(summary_img, summary_loc)
+    img.paste(base, base_loc, base)
 
     return img
 
-def cluster_box(rep, size):
+def cluster_box(rep, size, conf_color=None):
+    width, height = size
+
     cardinality = rep[0]
     confidence = rep[1]
     tweet = rep[2]
     
-    tweet_img = render_tweet(tweet, (size[0] - BORDER*2, size[1] - (BORDER*2 + BUFFER*2)))
-    tweet_img = ImageOps.expand(tweet_img, border=BORDER, fill=BLACK)
-    tweet_loc = (0, BUFFER*2)
+    if not conf_color: conf_color = cluster_color(float(confidence))
     
-    stats_size = (size[0] - BUFFER, BUFFER*2)
-    stats_img = box(f'Represents {cardinality} tweets (Confidence: {round(confidence, 2)})', stats_size)
-    stats_loc = (0, 0)
+    base_size = (width, height - BUFFER*2)
+    base = Image.new('RGBA', base_size, color=BLANK)
+    base_draw = ImageDraw.Draw(base)
+    rectround.rectangle(base_draw, base_size, border=BLACK)
+    base_loc = (0, BUFFER*2)
     
-    img = Image.new('RGB', size=size, color=WHITE)
-    img.paste(stats_img, stats_loc)
-    img.paste(tweet_img, tweet_loc)
+    tweet_size = (base_size[0] - BUFFER, base_size[1] - BUFFER)
+    tweet_img = render_tweet(tweet, tweet_size)
+    tweet_loc = (BUFFER // 2, BUFFER // 2)
+    
+    base.paste(tweet_img, tweet_loc)
+    
+    stats_text = f'Cardinality: {cardinality}; Confidence: {confidence}'
+    stats_loc = (BUFFER // 2, BUFFER // 2)
+    
+    img = Image.new('RGBA', size=size, color=BLANK)
+    draw = ImageDraw.Draw(img)
+    rectround.rectangle(draw, size, fill=conf_color)
+    draw.text(stats_loc, stats_text, fill=BLACK, font=SML_FNT)
+    img.paste(base, base_loc, base)
+    
     return img
 
 def sent_box(rep, size):
-    return cluster_box(rep, size)
+    color = sent_color(rep[1])
+    return cluster_box(rep, size, conf_color=color)
 
 def create(target, summary, cluster_reps, sent_reps, seed=None, label=None):
     '''
@@ -191,7 +251,7 @@ def create(target, summary, cluster_reps, sent_reps, seed=None, label=None):
     assert(len(cluster_reps) == 3)
     assert(len(sent_reps) == 6)
     
-    img = Image.open(BACKGROUND).convert('RGB')
+    img = Image.open(BACKGROUND).convert('RGBA')
     title_size = BIG_FNT.getsize(target)
     
     width, height = img.size
@@ -219,19 +279,27 @@ def create(target, summary, cluster_reps, sent_reps, seed=None, label=None):
     draw.text(title_loc, target, fill=BLACK, font=BIG_FNT, align='center')
     
     # TODO: ADD LABEL TO SUMMARY BOX
-    # TODO: ROUNDED RECTANGLES https://stackoverflow.com/questions/7787375/python-imaging-library-pil-drawing-rounded-rectangle-with-gradient
     summary_img = summary_box(summary, summary_size)
+    cluster_0_box = cluster_box(cluster_reps[0], cluster_size)
+    cluster_1_box = cluster_box(cluster_reps[1], cluster_size)
+    cluster_2_box = cluster_box(cluster_reps[2], cluster_size)
+    sent_0_box = sent_box(sent_reps[0], sent_size)
+    sent_1_box = sent_box(sent_reps[1], sent_size)
+    sent_2_box = sent_box(sent_reps[2], sent_size)
+    sent_3_box = sent_box(sent_reps[3], sent_size)
+    sent_4_box = sent_box(sent_reps[4], sent_size)
+    sent_5_box = sent_box(sent_reps[5], sent_size)
     
-    img.paste(summary_img, summary_loc)
-    img.paste(cluster_box(cluster_reps[0], cluster_size), cluster_0_loc)
-    img.paste(cluster_box(cluster_reps[1], cluster_size), cluster_1_loc)
-    img.paste(cluster_box(cluster_reps[2], cluster_size), cluster_2_loc)
-    img.paste(sent_box(sent_reps[0], sent_size), sent_0_loc)
-    img.paste(sent_box(sent_reps[1], sent_size), sent_1_loc)
-    img.paste(sent_box(sent_reps[2], sent_size), sent_2_loc)
-    img.paste(sent_box(sent_reps[3], sent_size), sent_3_loc)
-    img.paste(sent_box(sent_reps[4], sent_size), sent_4_loc)
-    img.paste(sent_box(sent_reps[5], sent_size), sent_5_loc)
+    img.paste(summary_img, summary_loc, summary_img)
+    img.paste(cluster_0_box, cluster_0_loc, cluster_0_box)
+    img.paste(cluster_1_box, cluster_1_loc, cluster_1_box)
+    img.paste(cluster_2_box, cluster_2_loc, cluster_2_box)
+    img.paste(sent_0_box, sent_0_loc, sent_0_box)
+    img.paste(sent_1_box, sent_1_loc, sent_1_box)
+    img.paste(sent_2_box, sent_2_loc, sent_2_box)
+    img.paste(sent_3_box, sent_3_loc, sent_3_box)
+    img.paste(sent_4_box, sent_4_loc, sent_4_box)
+    img.paste(sent_5_box, sent_5_loc, sent_5_box)
     
     img.save(str(REPORT_DIR / target) + '.png')
     img.show()

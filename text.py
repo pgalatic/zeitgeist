@@ -12,7 +12,7 @@ from PIL import Image, ImageDraw, ImageFont
 from extern import *
 
 class ImageText(object):
-    def __init__(self, filename_or_size, mode='RGBA', background=(0, 0, 0, 0),
+    def __init__(self, filename_or_size, mode='RGBA', background=WHITE,
                  encoding='utf8'):
         if isinstance(filename_or_size, str):
             self.filename = filename_or_size

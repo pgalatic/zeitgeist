@@ -41,9 +41,9 @@ if not os.path.exists(REPORT_DIR):
 BORDER = 3
 BUFFER = 32
 SPACING = BUFFER // 2
-BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
-TRANSPARENT = (0, 0, 0, 0)
+BLACK = (0, 0, 0, 255)
+WHITE = (255, 255, 255, 255)
+BLANK = (255, 0, 0, 0)
 ICON = str(BRAND_DIR / 'LOGO.png')
 COMMENT = str(BRAND_DIR / 'COMMENT.png')
 RETWEET = str(BRAND_DIR / 'RETWEET.png')
