@@ -17,6 +17,7 @@ from datetime import datetime
 
 # EXTERNAL LIB
 import tweepy
+import numpy as np
 from colour import Color
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
@@ -48,11 +49,11 @@ def sent_color(score):
     '''
     Scores are between -1 and 1.
     '''
-    score = math.floor(min((score + 1) * 50, 99.99))
-    red = Color(rgb=(1, 179/255, 186/255))
-    grn = Color(rgb=(186/255, 1, 201/255))
+    norm = math.floor(min((score + 1) * 50, 99.99))
+    red = Color(rgb=(1., 179/255, 186/255))
+    grn = Color(rgb=(186/255, 1., 201/255))
     gradient = list(red.range_to(grn, 100))
-    color = tuple(int(val * 255) for val in gradient[score].rgb)
+    color = tuple(int(val * 255) for val in gradient[norm].rgb)
     return color
 
 def box(text, size, fill=WHITE):
@@ -166,11 +167,11 @@ def render_tweet(tweet, size):
     
     bottom_size = (width, BUFFER)
     bottom = bottom_bar(bottom_size, comments, retweets, likes, date)
-    bottom_loc = (0, height - (bottom_size[1] + BUFFER))
+    bottom_loc = (0, height - (bottom_size[1] + SPACING))
     
-    base_size = (width - BUFFER, height - (top_size[1] + bottom_size[1] + BUFFER))
+    base_size = (width - BUFFER*2, height - (top_size[1] + bottom_size[1] + BUFFER))
     base = box(text, base_size)
-    base_loc = (0, top_size[1])
+    base_loc = (BUFFER, top_size[1])
     
     img = Image.new('RGBA', size=size, color=WHITE)
     img.paste(top, top_loc)
@@ -206,6 +207,68 @@ def summary_box(summary, size):
 
     return img
 
+def colorbar(color_func, size, left_label, right_label, min, max):
+    width, height = size
+    
+    fills = [color_func(score) for score in np.linspace(min, max, 10, endpoint=False)]
+    
+    left_size = SML_FNT.getsize(left_label)
+    left_loc = (SPACING, 0)
+    right_size = SML_FNT.getsize(right_label)
+    right_loc = (width - (right_size[0] + SPACING), 0)
+
+    rect_size = (width // 10, height // 2)
+    rect_loc = ((SPACING, height // 2), (rect_size[0] + SPACING, height))
+    
+    bar = Image.new('RGBA', size, color=BLANK)
+    draw = ImageDraw.Draw(bar)
+    draw.text(left_loc, left_label, fill=BLACK, font=SML_FNT)
+    draw.text(right_loc, right_label, fill=BLACK, font=SML_FNT)
+    for fill in fills:
+        draw.rectangle(rect_loc, fill=fill)
+        rect_loc = ((rect_loc[0][0] + rect_size[0], height // 2), (rect_loc[1][0] + rect_size[0], height))
+    
+    return bar
+
+def graph_box(size):
+    width, height = size
+    
+    struct_0 = 'The tweets below represent different factions on Twitter.'
+    struct_1 = '- The top 3 reflect groups of people who use the same words.'
+    struct_2 = '- The middle 3 reflect groups of people who feel intensely.'
+    struct_3 = '- The bottom 3 reflect the feelings of the most people.'
+    struct_4 = 'The bar at the top of each tweet reflects the size of the faction.'
+    struct_size = SML_FNT.getsize(struct_4)
+    struct_0_loc = (SPACING*2, SPACING)
+    struct_1_loc = (SPACING*4, SPACING + struct_0_loc[1] + struct_size[1])
+    struct_2_loc = (SPACING*4, SPACING + struct_1_loc[1] + struct_size[1])
+    struct_3_loc = (SPACING*4, SPACING + struct_2_loc[1] + struct_size[1])
+    struct_4_loc = (SPACING*2, SPACING + struct_3_loc[1] + struct_size[1])
+    
+    base = Image.new('RGBA', size, color=BLANK)
+    base_draw = ImageDraw.Draw(base)
+    rectround.rectangle(base_draw, size)
+    base_loc = (0, 0)
+    
+    base_draw.text(struct_0_loc, struct_0, fill=BLACK, font=SML_FNT)
+    base_draw.text(struct_1_loc, struct_1, fill=BLACK, font=SML_FNT)
+    base_draw.text(struct_2_loc, struct_2, fill=BLACK, font=SML_FNT)
+    base_draw.text(struct_3_loc, struct_3, fill=BLACK, font=SML_FNT)
+    base_draw.text(struct_4_loc, struct_4, fill=BLACK, font=SML_FNT)
+    
+    cluster_size = (width // 2 - BUFFER, height // 3)
+    cluster_bar = colorbar(cluster_color, cluster_size, 'Low confidence', 'High confidence', 0, 1)
+    cluster_loc = (width - (cluster_size[0] + BUFFER), BUFFER)
+    
+    sent_size = (width // 2 - BUFFER, height // 3)
+    sent_bar = colorbar(sent_color, sent_size, 'Negative', 'Positive', -1, 1)
+    sent_loc = (width - (sent_size[0] + BUFFER), cluster_loc[1] + cluster_size[1] + BUFFER)
+    
+    base.paste(cluster_bar, cluster_loc, cluster_bar)
+    base.paste(sent_bar, sent_loc, sent_bar)
+
+    return base
+
 def cluster_box(rep, size, conf_color=None):
     width, height = size
 
@@ -227,13 +290,17 @@ def cluster_box(rep, size, conf_color=None):
     
     base.paste(tweet_img, tweet_loc)
     
-    stats_text = f'Cardinality: {cardinality}; Confidence: {confidence}'
-    stats_loc = (BUFFER // 2, BUFFER // 2)
+    proportion = cardinality / SAMPLE_SIZE
+    color = Color(rgb=(conf_color[0] / 255, conf_color[1] / 255, conf_color[2] / 255))
+    color.luminance *= 0.66
+    color.saturation *= 0.9
+    card_loc = ((BUFFER*2, BUFFER // 2), (((width - BUFFER*2) * proportion) + BUFFER*2, BUFFER*3//2))
+    rect_color = (int(color.red * 255), int(color.green * 255), int(color.blue * 255))
     
     img = Image.new('RGBA', size=size, color=BLANK)
     draw = ImageDraw.Draw(img)
     rectround.rectangle(draw, size, fill=conf_color)
-    draw.text(stats_loc, stats_text, fill=BLACK, font=SML_FNT)
+    draw.rectangle(card_loc, fill=rect_color)
     img.paste(base, base_loc, base)
     
     return img
@@ -246,6 +313,8 @@ def create(target, summary, cluster_reps, sent_reps, seed=None, label=None):
     '''
     Takes data generated by the rest of the program and generates a report.
     '''
+    log('Compiling report...')
+    
     # Some sanity checks to make sure we have the right data.
     assert(type(summary) == str)
     assert(len(cluster_reps) == 3)
@@ -258,18 +327,20 @@ def create(target, summary, cluster_reps, sent_reps, seed=None, label=None):
     label_loc =     (int(width * 0.80), int(height * 0.02))
     seed_loc =      (int(width * 0.10), int(height * 0.02))
     title_loc =     (width // 2 - title_size[0] // 2, int(height * 0.05))
-    summary_loc =   (int(width * 0.02), title_loc[1] + title_size[1] + BUFFER*2)
-    cluster_0_loc = (int(width * 0.02), int(height * 0.46))
-    cluster_1_loc = (int(width * 0.34) + BUFFER // 4, int(height * 0.46))
-    cluster_2_loc = (int(width * 0.66) + BUFFER // 2, int(height * 0.46))
-    sent_0_loc =    (int(width * 0.02), int(height * 0.64))
-    sent_1_loc =    (int(width * 0.34) + BUFFER // 4, int(height * 0.64))
-    sent_2_loc =    (int(width * 0.66) + BUFFER // 2, int(height * 0.64))
-    sent_3_loc =    (int(width * 0.02), int(height * 0.82))
-    sent_4_loc =    (int(width * 0.34) + BUFFER // 4, int(height * 0.82))
-    sent_5_loc =    (int(width * 0.66) + BUFFER // 2, int(height * 0.82))
+    summary_loc =   (int(width * 0.02), title_loc[1] + title_size[1] + BUFFER)
+    graph_loc =     (int(width * 0.02), int(height * 0.40))
+    cluster_0_loc = (int(width * 0.02), int(height * 0.49))
+    cluster_1_loc = (int(width * 0.34) + BUFFER // 4, int(height * 0.49))
+    cluster_2_loc = (int(width * 0.66) + BUFFER // 2, int(height * 0.49))
+    sent_0_loc =    (int(width * 0.02), int(height * 0.66))
+    sent_1_loc =    (int(width * 0.34) + BUFFER // 4, int(height * 0.66))
+    sent_2_loc =    (int(width * 0.66) + BUFFER // 2, int(height * 0.66))
+    sent_3_loc =    (int(width * 0.02), int(height * 0.83))
+    sent_4_loc =    (int(width * 0.34) + BUFFER // 4, int(height * 0.83))
+    sent_5_loc =    (int(width * 0.66) + BUFFER // 2, int(height * 0.83))
     
-    summary_size = (width - (summary_loc[0] + BUFFER), cluster_0_loc[1] - (summary_loc[1] + BUFFER))
+    summary_size = (width - (summary_loc[0]*2), graph_loc[1] - (summary_loc[1] + BUFFER))
+    graph_size = (width - (graph_loc[0]*2), cluster_0_loc[1] - (graph_loc[1] + BUFFER))
     cluster_size = (cluster_1_loc[0] - (cluster_0_loc[0] + BUFFER), sent_0_loc[1] - (cluster_0_loc[1] + BUFFER))
     sent_size = (sent_1_loc[0] - (sent_0_loc[0] + BUFFER), height - (sent_4_loc[1] + BUFFER))
     
@@ -280,6 +351,7 @@ def create(target, summary, cluster_reps, sent_reps, seed=None, label=None):
     
     # TODO: ADD LABEL TO SUMMARY BOX
     summary_img = summary_box(summary, summary_size)
+    graph_img = graph_box(graph_size)
     cluster_0_box = cluster_box(cluster_reps[0], cluster_size)
     cluster_1_box = cluster_box(cluster_reps[1], cluster_size)
     cluster_2_box = cluster_box(cluster_reps[2], cluster_size)
@@ -291,6 +363,7 @@ def create(target, summary, cluster_reps, sent_reps, seed=None, label=None):
     sent_5_box = sent_box(sent_reps[5], sent_size)
     
     img.paste(summary_img, summary_loc, summary_img)
+    img.paste(graph_img, graph_loc, graph_img)
     img.paste(cluster_0_box, cluster_0_loc, cluster_0_box)
     img.paste(cluster_1_box, cluster_1_loc, cluster_1_box)
     img.paste(cluster_2_box, cluster_2_loc, cluster_2_box)

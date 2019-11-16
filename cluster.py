@@ -112,7 +112,7 @@ def find_cluster_reps(target, mock):
     # If we're mocking the data, it's very easy. Just return random tweets from
     # the corpus.
     if mock:
-        subsamp = samp[np.random.choice(samp.shape[0], 3), :]
+        subsamp = samp[np.random.choice(samp.shape[0], 3)]
         reps = [[0, np.random.normal(0.75, 0.25), item] for item in subsamp]
         # Mock cluster sizes so they appear reasonable.
         reps[0][0] = np.random.randint(SAMPLE_SIZE / 5, SAMPLE_SIZE / 1.5)

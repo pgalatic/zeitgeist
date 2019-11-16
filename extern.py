@@ -71,9 +71,11 @@ FILTER_STOPWORDS = True # used in cluster.py
 # Constants used for summarize.py
 REPLACE_DICT = {
     r'w .w' : r'w. w',
+    r'. , .': r'., .',
     '\.\.'  : '.',
     ' s '   : '\'s ',
     ' t '   : '\'t ',
+    ' d '   : '\'d ',
     ' \. '  : '. ',
     ' Dr '  : ' Dr. ',
     ' Mr '  : ' Mr. ',

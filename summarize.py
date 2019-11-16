@@ -51,6 +51,16 @@ def _get_top_tweets_helper(top_arr, num_for_metric, metric):
     top_n_arr.extend(zero_occ_for_metric[:num_randomly_sampled_zero_metric_tweets])
     return top_n_arr
 
+def _remove_duplicates(tweets):
+    texts = set()
+    results = list()
+    for tweet in tweets:
+        if tweet['text'] in texts:
+            continue
+        texts.add(tweet['text'])
+        results.append(tweet)
+    return results
+
 def get_top_tweets(tweets, num_likes=100, num_retweets=100):
     top_likes = sorted(tweets, key=lambda t: int(t['fav_count'] if t['fav_count'] else 0), reverse=True)
     _num_likes = r.randint(len(tweets) // 2, len(tweets)) if num_likes > len(tweets) else num_likes
@@ -59,7 +69,9 @@ def get_top_tweets(tweets, num_likes=100, num_retweets=100):
     top_retweets = sorted(tweets, key=lambda t: int(t['ret_count'] if t['ret_count'] else 0), reverse=True)
     _num_retweets = r.randint(len(tweets) // 2, len(tweets)) if num_retweets > len(tweets) else num_retweets
     top_n_retweets = _get_top_tweets_helper(top_retweets, _num_retweets, 'ret_count')
-    return [*top_n_likes, *top_n_retweets]
+    
+    combined = [*top_n_likes, *top_n_retweets]
+    return _remove_duplicates(combined)
 
 def core_summary_function(document, target, lang='en', max_sentence_len=30):
     _target = target[1:]
@@ -137,14 +149,13 @@ def core_summary_function(document, target, lang='en', max_sentence_len=30):
 
     return final_summary
 
-def summarize_tweets(target, generate_mock=True):
+def summarize_tweets(target, mock):
     '''Summarizes tweets passed in from zeitgeist'''
     selection = sample(target)
-    mock = None
-    if generate_mock:
+    if mock:
         r.shuffle(selection)
-        mock = selection[:NUM_SENTENCE_SUMMARY]
-        mock = ''.join(t['text'] for t in mock)
+        sentences = selection[:NUM_SENTENCE_SUMMARY]
+        return ''.join(t['text'] for t in sentences)
 
     log(f'Summarizing {len(selection)} tweets from {target}...')
     top_n_tweets = get_top_tweets(selection,
@@ -153,5 +164,5 @@ def summarize_tweets(target, generate_mock=True):
     log(f'Selected top {len(top_n_tweets)} tweets')
     corpus = ''.join([row['text'] for row in top_n_tweets])
     summary = core_summary_function(corpus, target)
-    return summary, mock
+    return summary
 

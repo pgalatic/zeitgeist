@@ -156,12 +156,11 @@ def partial(**kwargs):
         if not os.path.exists(str(DATA_DIR / kwargs['summarize']) + '.csv'):
             purify.cleanse(kwargs['summarize'])
         try:
-            summary, mock = summarize.summarize_tweets(kwargs['summarize'], kwargs['mock'])
-            # TODO: ADD SUMMARY TO REPORT HERE
-            log(mock)
-            log(summary)
+            summary = summarize.summarize_tweets(kwargs['summarize'], kwargs['mock'])
+            if DEBUG: log(summary)
         except MemoryError:
             log('WARN: Not enough memory to perform summarization!')
+            summary = ''
     if kwargs.get('cluster'):
         # Find representative tweets using agglomerative clustering.
         if not os.path.exists(str(DATA_DIR / kwargs['cluster']) + '.csv'):
