@@ -156,8 +156,9 @@ def partial(**kwargs):
         if not os.path.exists(str(DATA_DIR / kwargs['summarize']) + '.csv'):
             purify.cleanse(kwargs['summarize'])
         try:
-            summary = summarize.summarize_tweets(kwargs['summarize'], kwargs['mock'])
+            summary, mock = summarize.summarize_tweets(kwargs['summarize'], kwargs['mock'])
             # TODO: ADD SUMMARY TO REPORT HERE
+            log(mock)
             log(summary)
         except MemoryError:
             log('WARN: Not enough memory to perform summarization!')

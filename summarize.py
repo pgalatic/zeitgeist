@@ -127,8 +127,7 @@ def core_summary_function(document, target, lang='en', max_sentence_len=30):
                         sent_scores[sent] = 0
                     sent_scores[sent] += word_freq[w]
 
-    num_sentences_in_summary = 5
-    summarized_sentences = nlargest(num_sentences_in_summary, sent_scores, key=sent_scores.get)
+    summarized_sentences = nlargest(NUM_SENTENCE_SUMMARY, sent_scores, key=sent_scores.get)
 
     # convert spacy span to string
     final_sentences = [s.text.replace('\n', ' ').replace('.', ' ').strip().capitalize() for s in summarized_sentences]
@@ -138,9 +137,15 @@ def core_summary_function(document, target, lang='en', max_sentence_len=30):
 
     return final_summary
 
-def summarize_tweets(target, mock):
+def summarize_tweets(target, generate_mock=True):
     '''Summarizes tweets passed in from zeitgeist'''
     selection = sample(target)
+    mock = None
+    if generate_mock:
+        r.shuffle(selection)
+        mock = selection[:NUM_SENTENCE_SUMMARY]
+        mock = ''.join(t['text'] for t in mock)
+
     log(f'Summarizing {len(selection)} tweets from {target}...')
     top_n_tweets = get_top_tweets(selection,
                                   num_likes=r.randint(100, 300),
@@ -148,5 +153,5 @@ def summarize_tweets(target, mock):
     log(f'Selected top {len(top_n_tweets)} tweets')
     corpus = ''.join([row['text'] for row in top_n_tweets])
     summary = core_summary_function(corpus, target)
-    return summary
+    return summary, mock
 
