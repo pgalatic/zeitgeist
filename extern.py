@@ -64,24 +64,25 @@ GATHER_MAX_CHARS = 10 ** 9
 
 # Constants for cluster.py
 NUM_CLUSTERS = 3
-DISTANCE_THRESHOLD = 0.975
+DISTANCE_THRESHOLD = 0.925
 CORRECT_SPELLING = False
 FILTER_STOPWORDS = True # used in cluster.py
 
 # Constants used for summarize.py
 REPLACE_DICT = {
-    r'w .w' : r'w. w',
-    r'. , .': r'., .',
-    '\.\.'  : '.',
-    ' s '   : '\'s ',
-    ' t '   : '\'t ',
-    ' d '   : '\'d ',
-    ' \. '  : '. ',
-    ' Dr '  : ' Dr. ',
-    ' Mr '  : ' Mr. ',
-    ' Ms '  : ' Ms. ',
-    ' Jr '  : ' Jr. ',
-    ' Sr '  : ' Sr. '
+    r'(w) .(w)' : r'\1. \2',
+    r'(.) , (.)': r'\1, \2',
+    r'([A-Za-z]) ([dst]) '   : r"\1'\2 ",
+    '\.\.'      : '.',
+    ' \. '      : '. ',
+    ' Dr '      : ' Dr. ',
+    ' Mr '      : ' Mr. ',
+    ' Ms '      : ' Ms. ',
+    ' Jr '      : ' Jr. ',
+    ' Sr '      : ' Sr. ',
+    ' y all '   : ' y\'all ',
+    ' [Ii] m '  : ' I\'m ',
+    ' i '       : ' I ',
 }
 TEST_WIKI_ARTICLE = 'Albert Einstein'
 NLP_DOC_LENGTH = 400000
@@ -90,7 +91,7 @@ Q_RANDOM_SEED = 42
 NUM_SENTENCE_SUMMARY = 7
 
 # Constants for sentiment.py
-K_START = 3
+K_START = 6
 K_END = 15
 BEST_K_IDX = 5
 DEFAULT_NUM_CLUSTERS = 8
@@ -106,7 +107,9 @@ def log(*args):
 def sample(target, size=SAMPLE_SIZE):
     '''
     Returns a sample of rows from a file in DATA_DIR. A sample is only 
-    calculated once, and should be re-used between modules.
+    calculated once, and should be re-used between modules. If the corpus is 
+    smaller than the sample size, the entire corpus is used as the sample. 
+    Using a sample is mainly beneficial for 
     '''
     global SAMPLE
     try:
@@ -114,6 +117,9 @@ def sample(target, size=SAMPLE_SIZE):
             with open(str(DATA_DIR / target) + '.csv', 'r', newline='', encoding='utf-8') as src:
                 rdr = csv.DictReader(src)
                 raw = np.array([row for row in rdr])
+            if len(raw) <= size:
+                SAMPLE = raw
+            else:
                 SAMPLE = raw[np.random.choice(raw.shape[0], size)]
     except ValueError:
         # Sample already exists.

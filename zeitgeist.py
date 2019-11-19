@@ -118,9 +118,12 @@ def deref(tweets, target):
             tweets[idx]['text'] = rows[int(tweets[idx]['index'])]['text'].replace('&amp;', '&')
 
 def log_reps(reps):
+    '''
+    Simple means of logging a representative tweet, for debugging purposes.
+    '''
     for idx in range(len(reps)):
         log(f'Cluster size:\t{reps[idx][0]}')
-        log(f'Confidence:\t{round(reps[idx][1], 2)}')
+        log(f'Score:\t{round(reps[idx][1], 2)}')
         text = reps[idx][2]['text']
         log(f'Tweet:\t{text}')
 

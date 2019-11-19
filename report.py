@@ -269,7 +269,7 @@ def graph_box(size):
 
     return base
 
-def cluster_box(rep, size, conf_color=None):
+def cluster_box(rep, size, target, conf_color=None):
     width, height = size
 
     cardinality = rep[0]
@@ -290,24 +290,25 @@ def cluster_box(rep, size, conf_color=None):
     
     base.paste(tweet_img, tweet_loc)
     
-    proportion = cardinality / SAMPLE_SIZE
+    proportion = cardinality / len(sample(target))
     color = Color(rgb=(conf_color[0] / 255, conf_color[1] / 255, conf_color[2] / 255))
     color.luminance *= 0.66
     color.saturation *= 0.9
-    card_loc = ((BUFFER*2, BUFFER // 2), (((width - BUFFER*2) * proportion) + BUFFER*2, BUFFER*3//2))
+    card_loc_xx = (BUFFER*2, BUFFER // 2)
+    card_loc_yy = (card_loc_xx[0] + ((width - BUFFER*4) * proportion), BUFFER*3//2)
     rect_color = (int(color.red * 255), int(color.green * 255), int(color.blue * 255))
     
     img = Image.new('RGBA', size=size, color=BLANK)
     draw = ImageDraw.Draw(img)
     rectround.rectangle(draw, size, fill=conf_color)
-    draw.rectangle(card_loc, fill=rect_color)
+    draw.rectangle((card_loc_xx, card_loc_yy), fill=rect_color)
     img.paste(base, base_loc, base)
     
     return img
 
-def sent_box(rep, size):
+def sent_box(rep, size, target):
     color = sent_color(rep[1])
-    return cluster_box(rep, size, conf_color=color)
+    return cluster_box(rep, size, target, conf_color=color)
 
 def create(target, summary, cluster_reps, sent_reps, seed=None, label=None):
     '''
@@ -356,15 +357,15 @@ def create(target, summary, cluster_reps, sent_reps, seed=None, label=None):
     # TODO: ADD LABEL TO SUMMARY BOX
     summary_img = summary_box(summary, summary_size)
     graph_img = graph_box(graph_size)
-    cluster_0_box = cluster_box(cluster_reps[0], cluster_size)
-    cluster_1_box = cluster_box(cluster_reps[1], cluster_size)
-    cluster_2_box = cluster_box(cluster_reps[2], cluster_size)
-    sent_0_box = sent_box(sent_reps[0], sent_size)
-    sent_1_box = sent_box(sent_reps[1], sent_size)
-    sent_2_box = sent_box(sent_reps[2], sent_size)
-    sent_3_box = sent_box(sent_reps[3], sent_size)
-    sent_4_box = sent_box(sent_reps[4], sent_size)
-    sent_5_box = sent_box(sent_reps[5], sent_size)
+    cluster_0_box = cluster_box(cluster_reps[0], cluster_size, target)
+    cluster_1_box = cluster_box(cluster_reps[1], cluster_size, target)
+    cluster_2_box = cluster_box(cluster_reps[2], cluster_size, target)
+    sent_0_box = sent_box(sent_reps[0], sent_size, target)
+    sent_1_box = sent_box(sent_reps[1], sent_size, target)
+    sent_2_box = sent_box(sent_reps[2], sent_size, target)
+    sent_3_box = sent_box(sent_reps[3], sent_size, target)
+    sent_4_box = sent_box(sent_reps[4], sent_size, target)
+    sent_5_box = sent_box(sent_reps[5], sent_size, target)
     
     img.paste(summary_img, summary_loc, summary_img)
     img.paste(graph_img, graph_loc, graph_img)
