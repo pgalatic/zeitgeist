@@ -64,7 +64,7 @@ GATHER_MAX_CHARS = 10 ** 9
 
 # Constants for cluster.py
 NUM_CLUSTERS = 3
-DISTANCE_THRESHOLD = 0.975
+DISTANCE_THRESHOLD = 0.925
 CORRECT_SPELLING = False
 FILTER_STOPWORDS = True # used in cluster.py
 
