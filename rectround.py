@@ -10,7 +10,7 @@ from PIL import Image, ImageDraw
 
 from extern import *
 
-def sub_rectangle(draw, xy, corner_radius=50, fill=(255, 255, 255)):
+def sub_rectangle(draw, xy, corner_radius=25, fill=(255, 255, 255)):
     '''
     Source: https://stackoverflow.com/questions/7787375/python-imaging-library-pil-drawing-rounded-rectangle-with-gradient
     '''

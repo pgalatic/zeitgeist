@@ -9,6 +9,7 @@
 
 # STD LIB
 import os
+import re
 import sys
 import glob
 import argparse
@@ -115,7 +116,11 @@ def deref(tweets, target):
         rows = [row for row in rdr]
 
         for idx in range(len(tweets)):
-            tweets[idx]['text'] = rows[int(tweets[idx]['index'])]['text'].replace('&amp;', '&')
+            original = rows[int(tweets[idx]['index'])]['text']
+            # perform basic data cleaning (there's no use in preserving urls, for example)
+            original = re.sub(r'http\S+', '', original).replace('&amp;', '&')
+            # plug it back in where it came from
+            tweets[idx]['text'] = original
 
 def log_reps(reps):
     for idx in range(len(reps)):
