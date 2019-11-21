@@ -118,7 +118,7 @@ def deref(tweets, target):
         for idx in range(len(tweets)):
             original = rows[int(tweets[idx]['index'])]['text']
             # perform basic data cleaning (there's no use in preserving urls, for example)
-            original = re.sub(r'http\S+', '', original).replace('&amp;', '&')
+            original = re.sub(r'http\S+', '[link]', original).replace('&amp;', '&')
             # plug it back in where it came from
             tweets[idx]['text'] = original
 
