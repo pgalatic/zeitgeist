@@ -393,5 +393,6 @@ def create(target, summary, cluster_reps, sent_reps, seed=None, label=None):
     img.paste(cluster_1_box, cluster_1_loc, cluster_1_box)
     img.paste(cluster_2_box, cluster_2_loc, cluster_2_box)
     
-    img.save(str(REPORT_DIR / target) + '.png')
+    if label:   img.save(str(REPORT_DIR / target) + label + '.png')
+    else:       img.save(str(REPORT_DIR / target) + '.png')
     img.show()
